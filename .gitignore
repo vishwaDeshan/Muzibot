@@ -1,0 +1,33 @@
+# Backend (FastAPI)
+# Ignore Python bytecode and virtual environment
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+*.env
+
+# Ignore test output
+*.log
+*.sqlite3
+
+# Backend IDE/editor-specific
+.vscode/
+.idea/
+
+# Frontend (React)
+# Ignore node_modules and build output
+node_modules/
+build/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore npm logs
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Ignore local environment files
+.env
