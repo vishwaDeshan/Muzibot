@@ -97,15 +97,15 @@ def calculate_optimal_point(flattened_mood_preferences, target_mood, preferred_m
 
 
 # Example usage
-if __name__ == "__main__":
-    # Example input
-    flattened_mood_preferences = ['Joyful music', 'Relaxing music', 'Sad music']
-    target_mood = 'Sad_Prefs'  # Could be: 'Happy_Prefs', 'Sad_Prefs', 'Angry_Prefs', 'Relaxed_Prefs'
-    preferred_mood = 'calm'     # Could be: 'calm', 'happy', 'energetic'
-    reward_score = 1.0          # Float value
+# if __name__ == "__main__":
+#     # Example input
+#     flattened_mood_preferences = ['Joyful music', 'Relaxing music', 'Sad music']
+#     target_mood = 'Sad_Prefs'  # Could be: 'Happy_Prefs', 'Sad_Prefs', 'Angry_Prefs', 'Relaxed_Prefs'
+#     preferred_mood = 'calm'     # Could be: 'calm', 'happy', 'energetic'
+#     reward_score = 1.0          # Float value
 
-    result = calculate_optimal_point(flattened_mood_preferences, target_mood, preferred_mood, reward_score)
+#     result = calculate_optimal_point(flattened_mood_preferences, target_mood, preferred_mood, reward_score)
 
-    if result:
-        print("\n✅ Final Optimal Point Result:")
-        print(result)
+#     if result:
+#         print("\n Final Optimal Point Result:")
+#         print(result)

@@ -103,13 +103,13 @@ def find_similar_users(input_age, input_sex, input_profession, input_music, targ
 
 
 # Example usage
-if __name__ == "__main__":
-    input_age = 22
-    input_sex = "Male"
-    input_profession = "Undergraduate"
-    input_music = ["Pop", "Classical"]  # should be a list
-    target_mood_prfes = "Sad_Prefs"  # can be Happy_Prefs, Sad_Prefs, Angry_Prefs, Relaxed_Prefs
+# if __name__ == "__main__":
+#     input_age = 22
+#     input_sex = "Male"
+#     input_profession = "Undergraduate"
+#     input_music = ["Pop", "Classical"]  # should be a list
+#     target_mood_prfes = "Sad_Prefs"  # can be Happy_Prefs, Sad_Prefs, Angry_Prefs, Relaxed_Prefs
 
-    result, mood = find_similar_users(input_age, input_sex, input_profession, input_music, target_mood_prfes)
-    print(f"\nMost common preferences for mood '{mood}':")
-    print(result)
+#     result, mood = find_similar_users(input_age, input_sex, input_profession, input_music, target_mood_prfes)
+#     print(f"\nMost common preferences for mood '{mood}':")
+#     print(result)
