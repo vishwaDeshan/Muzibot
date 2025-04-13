@@ -92,6 +92,11 @@ print("Pairs shape:", pairs.shape, "Labels shape:", labels.shape)
 print("Number of positive pairs:", np.sum(labels))
 print("Number of negative pairs:", len(labels) - np.sum(labels))
 
+# Save the generated pairs and labels
+np.save(os.path.join(output_dir, 'pairs.npy'), pairs)
+np.save(os.path.join(output_dir, 'labels.npy'), labels)
+print("Saved pairs and labels arrays")
+
 # Split data
 pairs_train, pairs_val, labels_train, labels_val = train_test_split(
     pairs, labels, test_size=0.2, random_state=42
