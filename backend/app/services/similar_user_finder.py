@@ -140,6 +140,5 @@ def find_similar_users(input_age, input_sex, input_profession, input_music, targ
 #     input_music = ["Pop", "Classical"]
 #     target_mood_prfes = "Sad_Prefs"
 
-#     result, mood = find_similar_users(input_age, input_sex, input_profession, input_music, target_mood_prfes)
-#     print(f"\nMost common preferences for mood '{mood}':")
+#     result = find_similar_users(input_age, input_sex, input_profession, input_music, target_mood_prfes)
 #     print(result)
