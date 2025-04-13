@@ -1,13 +1,13 @@
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MultiLabelBinarizer
-import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, Lambda, Dropout
-from tensorflow.keras import backend as K
-import matplotlib.pyplot as plt
+import pandas as pd # type: ignore
+import numpy as np # type: ignore
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler # type: ignore
+from sklearn.model_selection import train_test_split # type: ignore
+from sklearn.preprocessing import MultiLabelBinarizer # type: ignore
+import tensorflow as tf # type: ignore
+from tensorflow.keras.models import Model # type: ignore
+from tensorflow.keras.layers import Input, Dense, Lambda, Dropout # type: ignore
+from tensorflow.keras import backend as K # type: ignore
+import matplotlib.pyplot as plt # type: ignore
 import pickle
 import os
 

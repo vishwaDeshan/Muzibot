@@ -1,11 +1,11 @@
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
-from sklearn.preprocessing import MultiLabelBinarizer
-from sklearn.metrics.pairwise import euclidean_distances
-from tensorflow.keras.models import load_model
-from tensorflow.keras.utils import get_custom_objects
-import tensorflow as tf
+import pandas as pd # type: ignore
+import numpy as np # type: ignore
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler # type: ignore
+from sklearn.preprocessing import MultiLabelBinarizer # type: ignore
+from sklearn.metrics.pairwise import euclidean_distances # type: ignore
+from tensorflow.keras.models import load_model # type: ignore
+from tensorflow.keras.utils import get_custom_objects # type: ignore
+import tensorflow as tf # type: ignore
 import pickle
 import os
 import warnings
