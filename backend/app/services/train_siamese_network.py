@@ -99,7 +99,7 @@ pairs_train, pairs_val, labels_train, labels_val = train_test_split(
 
 # Define the base network
 input_shape = (feature_vectors.shape[1],)
-input_layer = Input(shape=input_shape)
+input_layer = Input(shape=input_shape)  # Correct input shape
 x = Dense(128, activation='relu')(input_layer)
 x = Dropout(0.3)(x)
 x = Dense(64, activation='relu')(x)
@@ -163,9 +163,9 @@ np.save(os.path.join(output_dir, 'user_embeddings.npy'), user_embeddings)
 data.to_csv(os.path.join(output_dir, 'processed_user_data.csv'), index=False)
 print("Saved user embeddings and processed data")
 
-# Save the base network model using Keras format
-base_network.save(os.path.join(output_dir, 'base_network_model.keras'))
-print("Saved base_network model in Keras format")
+# Save the base network model using HDF5 format
+base_network.save(os.path.join(output_dir, 'base_network_model.h5'))
+print("Saved base_network model in HDF5 (.h5) format")
 
 # Save preprocessing objects
 with open(os.path.join(output_dir, 'scaler.pkl'), 'wb') as f:

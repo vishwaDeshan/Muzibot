@@ -3,6 +3,8 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.metrics.pairwise import euclidean_distances
+from tensorflow.keras.models import load_model
+from tensorflow.keras.utils import get_custom_objects
 import tensorflow as tf
 import pickle
 import os
@@ -30,7 +32,7 @@ def find_similar_users(input_age, input_sex, input_profession, input_music, targ
     with open(mlb_path, 'rb') as f:
         mlb = pickle.load(f)
 
-    model_path = os.path.join(artifacts_dir, 'base_network_model.keras')
+    model_path = os.path.join(artifacts_dir, 'base_network_model.h5')
     print(f"Loading model from: {model_path}")
     try:
         base_network = tf.keras.models.load_model(model_path, compile=False)
@@ -132,12 +134,12 @@ def find_similar_users(input_age, input_sex, input_profession, input_music, targ
 
 # Example usage
 # if __name__ == "__main__":
-    # input_age = 22
-    # input_sex = "Male"
-    # input_profession = "Undergraduate"
-    # input_music = ["Pop", "Classical"]
-    # target_mood_prfes = "Sad_Prefs"
+#     input_age = 22
+#     input_sex = "Male"
+#     input_profession = "Undergraduate"
+#     input_music = ["Pop", "Classical"]
+#     target_mood_prfes = "Sad_Prefs"
 
-    # result, mood = find_similar_users(input_age, input_sex, input_profession, input_music, target_mood_prfes)
-    # print(f"\nMost common preferences for mood '{mood}':")
-    # print(result)
+#     result, mood = find_similar_users(input_age, input_sex, input_profession, input_music, target_mood_prfes)
+#     print(f"\nMost common preferences for mood '{mood}':")
+#     print(result)
