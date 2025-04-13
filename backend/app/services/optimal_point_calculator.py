@@ -83,12 +83,16 @@ def calculate_optimal_point(flattened_mood_preferences, target_mood, preferred_m
     adjusted_weight_preferred /= total_weight
 
     optimal_valence = (adjusted_weight_mood * avg_mood_valence +
-                       adjusted_weight_emotion * emotion_valence +
-                       adjusted_weight_preferred * preferred_valence)
+                    adjusted_weight_emotion * emotion_valence +
+                    adjusted_weight_preferred * preferred_valence)
 
     optimal_arousal = (adjusted_weight_mood * avg_mood_arousal +
-                       adjusted_weight_emotion * emotion_arousal +
-                       adjusted_weight_preferred * preferred_arousal)
+                    adjusted_weight_emotion * emotion_arousal +
+                    adjusted_weight_preferred * preferred_arousal)
+
+    # Round to 2 decimal points
+    optimal_valence = round(optimal_valence, 2)
+    optimal_arousal = round(optimal_arousal, 2)
 
     print(f"\nOptimal Point (Valence, Arousal): ({optimal_valence:.2f}, {optimal_arousal:.2f})")
     print(f"Optimal Point: {{'valence': {optimal_valence:.2f}, 'arousal': {optimal_arousal:.2f}}}")

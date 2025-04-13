@@ -129,7 +129,7 @@ def find_similar_users(input_age, input_sex, input_profession, input_music, targ
     mood_preferences = similar_users_with_moods[target_mood_prfes].tolist()
     flattened_mood_preferences = [pref for user_prefs in mood_preferences for pref in user_prefs]
 
-    return flattened_mood_preferences, target_mood_prfes
+    return flattened_mood_preferences
 
 
 # Example usage

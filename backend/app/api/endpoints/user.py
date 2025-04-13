@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException # type: ignore
+from sqlalchemy.orm import Session # type: ignore
+from pydantic import BaseModel # type: ignore
 from typing import List
 from app.models.user import User
 from app.database import get_db
 from app.services.text_generation import text_generator
 from app.services.similar_user_finder import find_similar_users
+from app.services.optimal_point_calculator import calculate_optimal_point
 
 router = APIRouter()
 
@@ -42,16 +43,24 @@ async def get_users(db: Session = Depends(get_db)):
 async def find_similar_users_route(input_data: UserInput, db: Session = Depends(get_db)):
     try:
         # Directly calling the function like in main.py
-        result, mood = find_similar_users(
+        similar_user_music_prefs = find_similar_users(
             input_age=input_data.age,
             input_sex=input_data.sex,
             input_profession=input_data.profession,
             input_music=input_data.music,
             target_mood_prfes=input_data.target_mood_prefs
         )
+        if similar_user_music_prefs is None:
+            raise HTTPException(status_code=400, detail="No similar users music preferences found.")
+        
+        preferred_mood = 'calm'  # Default preferred mood
+        reward_score = 1.0  # Default reward score
+
+        # Calculate the optimal point
+        optimal_point = calculate_optimal_point(similar_user_music_prefs, input_data.target_mood_prefs, preferred_mood, reward_score)
+
         return {
-            "mood": mood,
-            "preferences": result
+            "optimal point": optimal_point
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
