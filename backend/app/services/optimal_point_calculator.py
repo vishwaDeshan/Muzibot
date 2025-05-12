@@ -1,4 +1,5 @@
 import numpy as np # type: ignore
+from app.helpers.utils import transform_to_range
 
 def calculate_optimal_point(flattened_mood_preferences, target_mood, preferred_mood='calm', reward_score=1.0):
     print("Calculating optimal point...")
@@ -33,8 +34,11 @@ def calculate_optimal_point(flattened_mood_preferences, target_mood, preferred_m
     mood_arousal_values = []
     for pref in flattened_mood_preferences:
         if pref in mood_to_valence_arousal:
-            mood_valence_values.append(mood_to_valence_arousal[pref]['valence'])
-            mood_arousal_values.append(mood_to_valence_arousal[pref]['arousal'])
+            valence, arousal = mood_to_valence_arousal[pref]['valence'], mood_to_valence_arousal[pref]['arousal']
+            # Apply transformation to scale the values to [-1, 1]
+            transformed_valence, transformed_arousal = transform_to_range(valence, arousal)
+            mood_valence_values.append(transformed_valence)
+            mood_arousal_values.append(transformed_arousal)
         else:
             print(f"Warning: '{pref}' not found in mood mapping, skipping.")
 
@@ -48,18 +52,22 @@ def calculate_optimal_point(flattened_mood_preferences, target_mood, preferred_m
 
     # Component 2: User's current emotion
     if current_emotion in emotion_to_valence_arousal:
-        emotion_valence = emotion_to_valence_arousal[current_emotion]['valence']
-        emotion_arousal = emotion_to_valence_arousal[current_emotion]['arousal']
+        valence, arousal = emotion_to_valence_arousal[current_emotion]['valence'], emotion_to_valence_arousal[current_emotion]['arousal']
+        # Apply transformation to scale the values to [-1, 1]
+        emotion_valence, emotion_arousal = transform_to_range(valence, arousal)
         print(f"Current emotion (valence, arousal): ({emotion_valence:.2f}, {emotion_arousal:.2f})")
+
     else:
         print(f"Error: Current emotion '{current_emotion}' not found in mapping.")
         return None
 
     # Component 3: User's preferred mood
     if preferred_mood in preferred_mood_to_valence_arousal:
-        preferred_valence = preferred_mood_to_valence_arousal[preferred_mood]['valence']
-        preferred_arousal = preferred_mood_to_valence_arousal[preferred_mood]['arousal']
+        valence, arousal = preferred_mood_to_valence_arousal[preferred_mood]['valence'], preferred_mood_to_valence_arousal[preferred_mood]['arousal']
+        # Apply transformation to scale the values to [-1, 1]
+        preferred_valence, preferred_arousal = transform_to_range(valence, arousal)
         print(f"Preferred mood (valence, arousal): ({preferred_valence:.2f}, {preferred_arousal:.2f})")
+
     else:
         print(f"Error: Preferred mood '{preferred_mood}' not found in mapping.")
         return None
