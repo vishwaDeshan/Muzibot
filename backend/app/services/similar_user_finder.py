@@ -10,7 +10,7 @@ import pickle
 import os
 import warnings
 
-def find_similar_users(input_age, input_sex, input_profession, input_music, target_mood_prfes):
+def find_similar_users(input_age, input_sex, input_profession, input_fav_music_genres, user_current_mood):
     # Get the directory of the current script
     base_dir = os.path.dirname(os.path.abspath(__file__))
     artifacts_dir = os.path.join(base_dir, '..', 'artifacts', 'siamese_network')
@@ -76,7 +76,7 @@ def find_similar_users(input_age, input_sex, input_profession, input_music, targ
         'Age': [input_age],
         'Sex': [input_sex],
         'Profession': [input_profession],
-        'Type of music you like to listen?': [input_music]
+        'Type of music you like to listen?': [input_fav_music_genres]
     })
 
     target_user_df['Age'] = scaler.transform(target_user_df[['Age']])
@@ -84,9 +84,9 @@ def find_similar_users(input_age, input_sex, input_profession, input_music, targ
     encoded_target_df = pd.DataFrame(encoded_target, columns=encoder.get_feature_names_out(['Sex', 'Profession']))
 
     # Filter out unknown music genres to avoid warnings
-    known_music = [genre for genre in input_music if genre in mlb.classes_]
-    if len(known_music) < len(input_music):
-        unknown_music = [genre for genre in input_music if genre not in mlb.classes_]
+    known_music = [genre for genre in input_fav_music_genres if genre in mlb.classes_]
+    if len(known_music) < len(input_fav_music_genres):
+        unknown_music = [genre for genre in input_fav_music_genres if genre not in mlb.classes_]
         warnings.warn(f"Unknown music genre(s) {unknown_music} ignored. Known genres: {list(mlb.classes_)}")
     music_encoded_target = pd.DataFrame(mlb.transform([known_music]), columns=mlb.classes_)
 
@@ -126,7 +126,7 @@ def find_similar_users(input_age, input_sex, input_profession, input_music, targ
     similar_users_with_moods = mood_data.iloc[similar_indices]
 
     # Step 7: Extract the target preferences
-    mood_preferences = similar_users_with_moods[target_mood_prfes].tolist()
+    mood_preferences = similar_users_with_moods[user_current_mood].tolist()
     flattened_mood_preferences = [pref for user_prefs in mood_preferences for pref in user_prefs]
 
     return flattened_mood_preferences
@@ -137,8 +137,8 @@ def find_similar_users(input_age, input_sex, input_profession, input_music, targ
 #     input_age = 22
 #     input_sex = "Male"
 #     input_profession = "Undergraduate"
-#     input_music = ["Pop", "Classical"]
-#     target_mood_prfes = "Sad_Prefs"
+#     input_fav_music_genres = ["Pop", "Classical"]
+#     user_current_mood = "Sad_Prefs"
 
-#     result = find_similar_users(input_age, input_sex, input_profession, input_music, target_mood_prfes)
+#     result = find_similar_users(input_age, input_sex, input_profession, input_fav_music_genres, user_current_mood)
 #     print(result)
