@@ -51,7 +51,7 @@ def find_similar_users(input_age, input_sex, input_profession, input_fav_music_g
     age_mean = data['Age'].mean()
     data['Age'] = data['Age'].fillna(age_mean)
     data['Sex'] = data['Sex'].fillna('Unknown')
-    data['Profession'] = data['Profession'].fillna('Unknown')  # Fixed typo
+    data['Profession'] = data['Profession'].fillna('Unknown')
     data['Profession'] = data['Profession'].replace('No', 'Unknown')
     data['Type of music you like to listen?'] = data['Type of music you like to listen?'].fillna('Missing')
     data['Type of music you like to listen?'] = data['Type of music you like to listen?'].apply(
