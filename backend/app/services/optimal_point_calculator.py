@@ -135,21 +135,21 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
     return {'valence': optimal_valence, 'arousal': optimal_arousal}
 
 # Example usage
-if __name__ == "__main__":
-    # Example inputs
-    similar_users_music_prefs = ['Relaxing music', 'Sad music', 'Sad music', 'Relaxing music', 'Aggressive music']
-    current_mood = 'Sad_Prefs'
-    desired_mood_after_listening = 'calm'
-    rl_weights = {
-        'similar_users_music_prefs': 0.5,
-        'current_user_mood': 0.3,
-        'desired_mood_after_listening': 0.2
-    }
+# if __name__ == "__main__":
+#     # Example inputs
+#     similar_users_music_prefs = ['Relaxing music', 'Sad music', 'Sad music', 'Relaxing music', 'Aggressive music']
+#     current_mood = 'Sad_Prefs'
+#     desired_mood_after_listening = 'calm'
+#     rl_weights = {
+#         'similar_users_music_prefs': 0.5,
+#         'current_user_mood': 0.3,
+#         'desired_mood_after_listening': 0.2
+#     }
 
-    # Run the function
-    result = calculate_optimal_point(
-        similar_users_music_prefs=similar_users_music_prefs,
-        current_mood=current_mood,
-        desired_mood_after_listening=desired_mood_after_listening,
-        rl_weights=rl_weights
-    )
+#     # Run the function
+#     result = calculate_optimal_point(
+#         similar_users_music_prefs=similar_users_music_prefs,
+#         current_mood=current_mood,
+#         desired_mood_after_listening=desired_mood_after_listening,
+#         rl_weights=rl_weights
+#     )
