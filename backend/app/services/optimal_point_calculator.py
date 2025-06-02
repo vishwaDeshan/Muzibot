@@ -1,9 +1,15 @@
 import numpy as np # type: ignore
+import random
 
 def transform_to_range(valence, arousal):
     transformed_valence = (valence - 0.5) * 2
     transformed_arousal = (arousal - 0.5) * 2
     return transformed_valence, transformed_arousal
+
+def sample_valence_arousal_from_range(valence_range, arousal_range):
+    valence = random.uniform(*valence_range)
+    arousal = random.uniform(*arousal_range)
+    return valence, arousal
 
 def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_mood_after_listening='calm', 
                            rl_weights=None):
@@ -19,23 +25,23 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
 
     # Step 2: Map music preferences and moods to valence and arousal values
     music_prefs_to_valence_arousal = {
-        'Joyful music': {'valence': 0.8, 'arousal': 0.7},
-        'Relaxing music': {'valence': 0.6, 'arousal': 0.3},
-        'Sad music': {'valence': 0.2, 'arousal': 0.4},
-        'Aggressive music': {'valence': 0.3, 'arousal': 0.9}
+        'Joyful music': {'valence': (0.75, 0.85), 'arousal': (0.65, 0.75)},
+        'Relaxing music': {'valence': (0.55, 0.65), 'arousal': (0.25, 0.35)},
+        'Sad music': {'valence': (0.15, 0.25), 'arousal': (0.35, 0.45)},
+        'Aggressive music': {'valence': (0.25, 0.35), 'arousal': (0.85, 0.95)}
     }
 
     user_current_mood_to_valence_arousal = {
-        'Happy': {'valence': 0.9, 'arousal': 0.6},
-        'Sad': {'valence': 0.2, 'arousal': 0.3},
-        'Angry': {'valence': 0.3, 'arousal': 0.8},
-        'Relaxed': {'valence': 0.7, 'arousal': 0.2}
+        'Happy': {'valence': (0.85, 0.95), 'arousal': (0.55, 0.65)},
+        'Sad': {'valence': (0.15, 0.25), 'arousal': (0.25, 0.35)},
+        'Angry': {'valence': (0.25, 0.35), 'arousal': (0.75, 0.85)},
+        'Relaxed': {'valence': (0.65, 0.75), 'arousal': (0.15, 0.25)}
     }
 
     desired_mood_to_valence_arousal = {
-        'calm': {'valence': 0.6, 'arousal': 0.2},
-        'happy': {'valence': 0.9, 'arousal': 0.6},
-        'energetic': {'valence': 0.7, 'arousal': 0.8}
+        'calm': {'valence': (0.55, 0.65), 'arousal': (0.15, 0.25)},
+        'happy': {'valence': (0.85, 0.95), 'arousal': (0.55, 0.65)},
+        'energetic': {'valence': (0.65, 0.75), 'arousal': (0.75, 0.85)}
     }
 
     # Step 3: Calculate valence and arousal for each component
@@ -45,10 +51,9 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
     
     for pref in similar_users_music_prefs:
         if pref in music_prefs_to_valence_arousal:
-            valence, arousal = (
-                music_prefs_to_valence_arousal[pref]['valence'],
-                music_prefs_to_valence_arousal[pref]['arousal']
-            )
+            val_range = music_prefs_to_valence_arousal[pref]['valence']
+            aro_range = music_prefs_to_valence_arousal[pref]['arousal']
+            valence, arousal = sample_valence_arousal_from_range(val_range, aro_range)
             transformed_valence, transformed_arousal = transform_to_range(valence, arousal)
             similar_users_prefs_valence_values.append(transformed_valence)
             similar_users_prefs_arousal_values.append(transformed_arousal)
@@ -64,12 +69,10 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
     print(f"Average similar users' music preferences (valence, arousal): "
           f"({avg_similar_users_prefs_valence:.2f}, {avg_similar_users_prefs_arousal:.2f})")
 
-    # Component 2: Current user's mood
     if current_user_mood in user_current_mood_to_valence_arousal:
-        valence, arousal = (
-            user_current_mood_to_valence_arousal[current_user_mood]['valence'],
-            user_current_mood_to_valence_arousal[current_user_mood]['arousal']
-        )
+        val_range = user_current_mood_to_valence_arousal[current_user_mood]['valence']
+        aro_range = user_current_mood_to_valence_arousal[current_user_mood]['arousal']
+        valence, arousal = sample_valence_arousal_from_range(val_range, aro_range)
         current_mood_valence, current_mood_arousal = transform_to_range(valence, arousal)
         print(f"Current user mood (valence, arousal): "
               f"({current_mood_valence:.2f}, {current_mood_arousal:.2f})")
@@ -79,10 +82,9 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
 
     # Component 3: Desired user mood after listening to a song
     if desired_mood_after_listening in desired_mood_to_valence_arousal:
-        valence, arousal = (
-            desired_mood_to_valence_arousal[desired_mood_after_listening]['valence'],
-            desired_mood_to_valence_arousal[desired_mood_after_listening]['arousal']
-        )
+        val_range = desired_mood_to_valence_arousal[desired_mood_after_listening]['valence']
+        aro_range = desired_mood_to_valence_arousal[desired_mood_after_listening]['arousal']
+        valence, arousal = sample_valence_arousal_from_range(val_range, aro_range)
         desired_mood_valence, desired_mood_arousal = transform_to_range(valence, arousal)
         print(f"Desired user mood after listening (valence, arousal): "
               f"({desired_mood_valence:.2f}, {desired_mood_arousal:.2f})")
@@ -133,21 +135,21 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
     return {'valence': optimal_valence, 'arousal': optimal_arousal}
 
 # Example usage
-# if __name__ == "__main__":
-#     # Example inputs
-#     similar_users_music_prefs = ['Relaxing music', 'Sad music', 'Sad music', 'Relaxing music', 'Aggressive music']
-#     current_mood = 'Sad_Prefs'
-#     desired_mood_after_listening = 'calm'
-#     rl_weights = {
-#         'similar_users_music_prefs': 0.5,
-#         'current_user_mood': 0.3,
-#         'desired_mood_after_listening': 0.2
-#     }
+if __name__ == "__main__":
+    # Example inputs
+    similar_users_music_prefs = ['Relaxing music', 'Sad music', 'Sad music', 'Relaxing music', 'Aggressive music']
+    current_mood = 'Sad_Prefs'
+    desired_mood_after_listening = 'calm'
+    rl_weights = {
+        'similar_users_music_prefs': 0.5,
+        'current_user_mood': 0.3,
+        'desired_mood_after_listening': 0.2
+    }
 
-#     # Run the function
-#     result = calculate_optimal_point(
-#         similar_users_music_prefs=similar_users_music_prefs,
-#         current_mood=current_mood,
-#         desired_mood_after_listening=desired_mood_after_listening,
-#         rl_weights=rl_weights
-#     )
+    # Run the function
+    result = calculate_optimal_point(
+        similar_users_music_prefs=similar_users_music_prefs,
+        current_mood=current_mood,
+        desired_mood_after_listening=desired_mood_after_listening,
+        rl_weights=rl_weights
+    )
