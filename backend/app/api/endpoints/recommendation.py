@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException # type: ignore
+from sqlalchemy.orm import Session # type: ignore
+from pydantic import BaseModel # type: ignore
 from typing import List, Dict
 from app.models.user import User
 from app.database import get_db
@@ -58,6 +58,7 @@ async def rate_song(input_data: SongRatingInput, db: Session = Depends(get_db)):
 
         # Train the RL model
         rl_agent.train(
+            song_id=input_data.song_id,
             mood=input_data.current_mood,
             prev_rating=input_data.previous_rating,
             new_rating=input_data.rating,
@@ -80,12 +81,12 @@ async def recommend_songs(input_data: RecommendationInput, db: Session = Depends
         # Initialize RL agent
         rl_agent = RLRecommendationAgent(db, input_data.user_id)
 
-        # Get optimized weights from RL model
+        # Get generalized weights from RL model
         try:
-            rl_weights = rl_agent.get_optimized_weights(input_data.current_mood, input_data.previous_rating)
+            rl_weights = rl_agent.get_generalized_weights(input_data.current_mood, input_data.previous_rating)
         except Exception as e:
-            logging.error(f"Failed to get optimized weights: {str(e)}")
-            raise HTTPException(status_code=500, detail="Failed to compute optimized weights")
+            logging.error(f"Failed to get generalized weights: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to compute generalized weights")
 
         # Find similar users
         similar_users_music_prefs = find_similar_users(
@@ -97,7 +98,6 @@ async def recommend_songs(input_data: RecommendationInput, db: Session = Depends
         )
         if similar_users_music_prefs is None:
             raise HTTPException(status_code=400, detail="No similar users music preferences found.")
-
 
         # Calculate the optimal point using RL weights
         optimal_point = calculate_optimal_point(
@@ -111,7 +111,7 @@ async def recommend_songs(input_data: RecommendationInput, db: Session = Depends
         return {
             "optimal_point": optimal_point,
             "rl_weights": rl_weights,
-            "current mood": input_data.current_mood
+            "current_mood": input_data.current_mood
         }
     except Exception as e:
         logging.error(f"Error in recommend_songs: {str(e)}")
