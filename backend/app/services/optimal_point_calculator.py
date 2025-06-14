@@ -17,9 +17,9 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
 
     # Step 1: Determine the user's current mood based on the mood preferences
     current_user_mood = (
-        'Happy' if current_mood == 'Happy_Prefs' else
-        'Sad' if current_mood == 'Sad_Prefs' else
-        'Angry' if current_mood == 'Angry_Prefs' else
+        'Happy' if current_mood == 'Happy' else
+        'Sad' if current_mood == 'Sad' else
+        'Angry' if current_mood == 'Angry' else
         'Relaxed'
     )
 
@@ -138,7 +138,7 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
 # if __name__ == "__main__":
 #     # Example inputs
 #     similar_users_music_prefs = ['Relaxing music', 'Sad music', 'Sad music', 'Relaxing music', 'Aggressive music']
-#     current_mood = 'Sad_Prefs'
+#     current_mood = 'Sad'
 #     desired_mood_after_listening = 'calm'
 #     rl_weights = {
 #         'similar_users_music_prefs': 0.5,

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException # type: ignore
 from sqlalchemy.orm import Session # type: ignore
 from pydantic import BaseModel # type: ignore
-from typing import List, Dict
+from typing import List, Optional
 from app.models.user import User
 from app.database import get_db
 from app.services.text_generation import text_generator
@@ -28,7 +28,7 @@ class RecommendationInput(BaseModel):
     fav_music_genres: List[str]
     desired_mood: str
     current_mood: str
-    previous_rating: int
+    previous_rating: Optional[int] = None
 
 class SongRatingInput(BaseModel):
     user_id: int
@@ -81,9 +81,12 @@ async def recommend_songs(input_data: RecommendationInput, db: Session = Depends
         # Initialize RL agent
         rl_agent = RLRecommendationAgent(db, input_data.user_id)
 
-        # Get generalized weights from RL model
+        # Get generalized weights
         try:
-            rl_weights = rl_agent.get_generalized_weights(input_data.current_mood, input_data.previous_rating)
+            rl_weights = rl_agent.get_generalized_weights(
+                mood=input_data.current_mood,
+                prev_rating=input_data.previous_rating or 3  # Default to 3 if None
+            )
         except Exception as e:
             logging.error(f"Failed to get generalized weights: {str(e)}")
             raise HTTPException(status_code=500, detail="Failed to compute generalized weights")
@@ -97,9 +100,9 @@ async def recommend_songs(input_data: RecommendationInput, db: Session = Depends
             user_current_mood=input_data.current_mood            
         )
         if similar_users_music_prefs is None:
-            raise HTTPException(status_code=400, detail="No similar users music preferences found.")
+            raise HTTPException(status_code=404, detail="No similar songs found.")
 
-        # Calculate the optimal point using RL weights
+        # Calculate the optimal point
         optimal_point = calculate_optimal_point(
             similar_users_music_prefs=similar_users_music_prefs,
             current_mood=input_data.current_mood,
@@ -107,7 +110,7 @@ async def recommend_songs(input_data: RecommendationInput, db: Session = Depends
             rl_weights=rl_weights
         )
 
-        # For now, return the optimal point and weights
+        # Return the optimal point and weights
         return {
             "optimal_point": optimal_point,
             "rl_weights": rl_weights,

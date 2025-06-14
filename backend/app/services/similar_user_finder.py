@@ -17,23 +17,16 @@ def find_similar_users(input_age, input_sex, input_profession, input_fav_music_g
     datasets_dir = os.path.join(base_dir, '..', 'datasets')
 
     # Step 1: Load the trained model and preprocessing objects
-    scaler_path = os.path.join(artifacts_dir, 'scaler.pkl')
-    print(f"Loading scaler from: {scaler_path}")
-    with open(scaler_path, 'rb') as f:
+    with open(os.path.join(artifacts_dir, 'scaler.pkl'), 'rb') as f:
         scaler = pickle.load(f)
 
-    encoder_path = os.path.join(artifacts_dir, 'encoder.pkl')
-    print(f"Loading encoder from: {encoder_path}")
-    with open(encoder_path, 'rb') as f:
+    with open(os.path.join(artifacts_dir, 'encoder.pkl'), 'rb') as f:
         encoder = pickle.load(f)
 
-    mlb_path = os.path.join(artifacts_dir, 'mlb.pkl')
-    print(f"Loading mlb from: {mlb_path}")
-    with open(mlb_path, 'rb') as f:
+    with open(os.path.join(artifacts_dir, 'mlb.pkl'), 'rb') as f:
         mlb = pickle.load(f)
 
     model_path = os.path.join(artifacts_dir, 'base_network_model.h5')
-    print(f"Loading model from: {model_path}")
     try:
         base_network = tf.keras.models.load_model(model_path, compile=False)
     except Exception as e:
@@ -47,7 +40,7 @@ def find_similar_users(input_age, input_sex, input_profession, input_fav_music_g
     original_data = data.copy()
     data = data[['Age', 'Sex', 'Profession', 'Type of music you like to listen?']].copy()
 
-    # Fill missing values (consistent with training script)
+    # Preprocess user data
     age_mean = data['Age'].mean()
     data['Age'] = data['Age'].fillna(age_mean)
     data['Sex'] = data['Sex'].fillna('Unknown')
@@ -83,11 +76,29 @@ def find_similar_users(input_age, input_sex, input_profession, input_fav_music_g
     encoded_target = encoder.transform(target_user_df[['Sex', 'Profession']])
     encoded_target_df = pd.DataFrame(encoded_target, columns=encoder.get_feature_names_out(['Sex', 'Profession']))
 
-    # Filter out unknown music genres to avoid warnings
-    known_music = [genre for genre in input_fav_music_genres if genre in mlb.classes_]
-    if len(known_music) < len(input_fav_music_genres):
-        unknown_music = [genre for genre in input_fav_music_genres if genre not in mlb.classes_]
-        warnings.warn(f"Unknown music genre(s) {unknown_music} ignored. Known genres: {list(mlb.classes_)}")
+    # Step 3.1: Normalize and filter music genres
+    genre_correction_map = {
+        'Classical': 'Classic',
+        'EDM': 'Electronic Dance Music (EDM)',
+        'Hip Hop': 'Hip-Hop',
+        'RnB': 'R&B',
+        'Orchestra': 'Orchestral ',
+        'Afro': 'Trap music and Afro music',
+        'Metallic': 'Metal',
+        'Country Music': 'Country ',
+        'Jazz Music': 'Jazz'
+    }
+
+    corrected_genres = [genre_correction_map.get(g.strip(), g.strip()) for g in input_fav_music_genres]
+    known_music = [genre for genre in corrected_genres if genre in mlb.classes_]
+    unknown_music = [genre for genre in corrected_genres if genre not in mlb.classes_]
+
+    if unknown_music:
+        print(f"Unknown genres ignored: {unknown_music}")
+
+    if not known_music:
+        raise ValueError("No valid music genres found. Please check input genres.")
+
     music_encoded_target = pd.DataFrame(mlb.transform([known_music]), columns=mlb.classes_)
 
     target_feature_vector = pd.concat([target_user_df[['Age']], encoded_target_df, music_encoded_target], axis=1).values
@@ -112,13 +123,13 @@ def find_similar_users(input_age, input_sex, input_profession, input_fav_music_g
 
     mood_data = mood_data.rename(columns={
         'Type of music you like to listen?': 'Genres',
-        'What type of music do you prefer to listen to when you\'re in a happy mood?': 'Happy_Prefs',
-        'What type of music do you prefer to listen to when you\'re sad?': 'Sad_Prefs',
-        'What type of music do you prefer to listen to when you\'re angry?': 'Angry_Prefs',
-        'What type of music do you prefer to listen to when you\'re in a relaxed mood?': 'Relaxed_Prefs'
+        'What type of music do you prefer to listen to when you\'re in a happy mood?': 'Happy',
+        'What type of music do you prefer to listen to when you\'re sad?': 'Sad',
+        'What type of music do you prefer to listen to when you\'re angry?': 'Angry',
+        'What type of music do you prefer to listen to when you\'re in a relaxed mood?': 'Relaxed'
     })
 
-    mood_columns = ['Happy_Prefs', 'Sad_Prefs', 'Angry_Prefs', 'Relaxed_Prefs']
+    mood_columns = ['Happy', 'Sad', 'Angry', 'Relaxed']
     for col in mood_columns:
         mood_data[col] = mood_data[col].fillna('').str.strip(',').str.split(', ')
         mood_data[col] = mood_data[col].apply(lambda x: [] if x == [''] else x)
@@ -138,7 +149,7 @@ def find_similar_users(input_age, input_sex, input_profession, input_fav_music_g
 #     input_sex = "Male"
 #     input_profession = "Undergraduate"
 #     input_fav_music_genres = ["Pop", "Classical"]
-#     user_current_mood = "Sad_Prefs"
+#     user_current_mood = "Sad"
 
 #     result = find_similar_users(input_age, input_sex, input_profession, input_fav_music_genres, user_current_mood)
 #     print(result)
