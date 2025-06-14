@@ -1,6 +1,6 @@
-import numpy as np
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+import numpy as np # type: ignore
+from sqlalchemy.orm import Session # type: ignore
+from sqlalchemy import func # type: ignore
 from app.models.rl_models import RLQTable, RLWeights, SongRating
 from datetime import datetime
 import logging
