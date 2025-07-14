@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt # type: ignore
 import seaborn as sns # type: ignore
 from matplotlib.patches import Circle # type: ignore
 
-def find_songs_in_region(optimal_point: Tuple[float, float], radius: float = 0.1) -> List[Dict]:
+def find_songs_in_region(optimal_point: Tuple[float, float], radius: float = 0.15) -> List[Dict]:
     # Define input and output paths
     base_dir = os.path.dirname(os.path.abspath(__file__))
     datasets_dir = os.path.join(base_dir, '..', 'datasets')
@@ -107,7 +107,7 @@ def find_songs_in_region(optimal_point: Tuple[float, float], radius: float = 0.1
 # Example usage
 # if __name__ == "__main__":
 #     sample_optimal_point = (0.5, 0.5)
-#     radius = 0.1
+#     radius = 0.15
     
 #     try:
 #         # Call the function
