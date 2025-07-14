@@ -1,6 +1,6 @@
-import numpy as np
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+import numpy as np # type: ignore
+from sqlalchemy.orm import Session # type: ignore
+from sqlalchemy import func # type: ignore
 from app.models.rl_models import RLQTable, RLWeights, SongRating
 from datetime import datetime
 import logging
@@ -20,7 +20,7 @@ class RLRecommendationAgent:
         self.learning_rate = 0.1
         self.discount_factor = 0.9
         self.epsilon = 0.1
-        self.similarity_penalty = 0.2  # Penalty for inconsistent ratings
+        self.similarity_penalty = 0.05  # Penalty for inconsistent ratings
 
     def _init_q_table(self):
         return np.zeros((len(self.moods), len(self.ratings), len(self.arousal_bins), len(self.valence_bins),
@@ -29,8 +29,8 @@ class RLRecommendationAgent:
     def _load_q_table_for_song(self, song_id: str):
         q_table = self._init_q_table()
         song = self.db.query(SongRating).filter(SongRating.song_id == song_id).first()
-        arousal = song.arousal if song and song.arousal is not None else 0.5
-        valence = song.valence if song and song.valence is not None else 0.5
+        arousal = song.arousal
+        valence = song.valence
         arousal_idx = np.digitize(arousal, self.arousal_bins, right=True) - 1
         valence_idx = np.digitize(valence, self.valence_bins, right=True) - 1
         arousal_idx = max(0, min(arousal_idx, len(self.arousal_bins) - 1))
@@ -113,7 +113,7 @@ class RLRecommendationAgent:
         for song in similar_songs:
             if song.song_id != song_id and song.arousal is not None and song.valence is not None:
                 distance = np.sqrt((current_song.arousal - song.arousal)**2 + (current_song.valence - song.valence)**2)
-                if distance < 0.2:
+                if distance < 0.3: # newly updated
                     rating_diff = abs(rating - song.rating)
                     penalty += self.similarity_penalty * rating_diff / (distance + 1e-6)
         
@@ -268,6 +268,7 @@ class RLRecommendationAgent:
             RLWeights.user_id == self.user_id,
             RLWeights.mood == mood
         ).first()
+
         if entry:
             entry.weight_similar_users_music_prefs = normalized_weights['similar_users_music_prefs']
             entry.weight_current_user_mood = normalized_weights['current_user_mood']
@@ -309,6 +310,7 @@ class RLRecommendationAgent:
             valence=valence,
             context=context
         )
+
         self.db.add(new_rating)
         self.db.commit()
 
@@ -318,4 +320,5 @@ class RLRecommendationAgent:
             SongRating.song_id == song_id,
             SongRating.mood_at_rating == mood
         ).first()
+
         return rating and rating.rating < 3

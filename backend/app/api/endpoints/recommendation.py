@@ -7,6 +7,7 @@ from app.database import get_db
 from app.services.text_generation import text_generator
 from app.services.similar_user_finder import find_similar_users
 from app.services.optimal_point_calculator import calculate_optimal_point
+from app.services.find_songs_in_region import find_songs_in_region
 from app.services.rl_service import RLRecommendationAgent
 import logging
 
@@ -37,6 +38,9 @@ class SongRatingInput(BaseModel):
     current_mood: str
     previous_rating: int
     next_mood: str
+    arousal: float
+    valence: float
+    context: Optional[str] = None
 
 @router.post("/rate-song")
 async def rate_song(input_data: SongRatingInput, db: Session = Depends(get_db)):
@@ -54,7 +58,7 @@ async def rate_song(input_data: SongRatingInput, db: Session = Depends(get_db)):
         rl_agent = RLRecommendationAgent(db, input_data.user_id)
 
         # Save the rating
-        rl_agent.save_rating(input_data.song_id, input_data.rating, input_data.current_mood)
+        rl_agent.save_rating(input_data.song_id, input_data.rating, input_data.current_mood, input_data.arousal, input_data.valence, input_data.context)
 
         # Train the RL model
         rl_agent.train(
@@ -110,11 +114,13 @@ async def recommend_songs(input_data: RecommendationInput, db: Session = Depends
             rl_weights=rl_weights
         )
 
-        # Return the optimal point and weights
+        optimal_point_tuple = (optimal_point["valence"], optimal_point["arousal"])
+
+        # Find songs in circular region around optimal point
+        songs_in_region = find_songs_in_region(optimal_point=optimal_point_tuple, radius=0.15)
+
         return {
-            "optimal_point": optimal_point,
-            "rl_weights": rl_weights,
-            "current_mood": input_data.current_mood
+            "songs_in_region": songs_in_region
         }
     except Exception as e:
         logging.error(f"Error in recommend_songs: {str(e)}")
