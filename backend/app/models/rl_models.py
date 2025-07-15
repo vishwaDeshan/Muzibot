@@ -64,6 +64,13 @@ class SongRating(Base):
     arousal = Column(Float, nullable=True)  # Arousal coordinate [0, 1]
     valence = Column(Float, nullable=True)  # Valence coordinate [0, 1]
     context = Column(String, nullable=True)
+    danceability = Column(Float, nullable=True)
+    energy = Column(Float, nullable=True)
+    acousticness = Column(Float,nullable=True)
+    instrumentalness = Column(Float, nullable=True)
+    speechiness = Column(Float, nullable=True)
+    liveness = Column(Float, nullable=True)
+    tempo = Column(Float, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 

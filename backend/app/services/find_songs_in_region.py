@@ -42,7 +42,9 @@ def find_songs_in_region(optimal_point: Tuple[float, float], radius: float = 0.1
 
     # Filter songs within the radius
     songs_in_region = df[df['distance'] <= radius][[
-        'song_name', 'genre', 'energy_scaled', 'valence_scaled', 'distance'
+        'song_name', 'genre', 'energy_scaled', 'valence_scaled', 'distance', 'uri', 
+        'danceability', 'energy', 'loudness', 'speechiness', 'acousticness', 'instrumentalness', 
+        'liveness', 'valence', 'tempo'
     ]]
 
     # Convert to list of dicts sorted by distance
@@ -57,6 +59,7 @@ def find_songs_in_region(optimal_point: Tuple[float, float], radius: float = 0.1
         # Ensure song_name and genre are strings (handle potential None or non-string types)
         record['song_name'] = str(record['song_name']) if pd.notna(record['song_name']) else "Unknown"
         record['genre'] = str(record['genre']) if pd.notna(record['genre']) else "Unknown"
+        record ['uri'] = str(record['uri'] if pd.notna(record['uri']) else "Unknown")
 
     # **** Create scatter plot ****
 
