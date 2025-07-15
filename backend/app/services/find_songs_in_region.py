@@ -43,6 +43,8 @@ def find_songs_in_region(optimal_point: Tuple[float, float], radius: float = 0.1
     # Filter songs within the radius
     songs_in_region = df[df['distance'] <= radius][[
         'song_name', 'genre', 'energy_scaled', 'valence_scaled', 'distance', 'uri', 
+        'danceability', 'energy', 'loudness', 'speechiness', 'acousticness', 'instrumentalness', 
+        'liveness', 'valence', 'tempo'
     ]]
 
     # Convert to list of dicts sorted by distance
