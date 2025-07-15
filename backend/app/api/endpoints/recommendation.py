@@ -8,6 +8,7 @@ from app.services.text_generation import text_generator
 from app.services.similar_user_finder import find_similar_users
 from app.services.optimal_point_calculator import calculate_optimal_point
 from app.services.find_songs_in_region import find_songs_in_region
+from app.services.content_based_recommender import get_best_match_songs
 from app.services.rl_service import RLRecommendationAgent
 import logging
 
@@ -119,9 +120,12 @@ async def recommend_songs(input_data: RecommendationInput, db: Session = Depends
         # Find songs in circular region around optimal point
         songs_in_region = find_songs_in_region(optimal_point=optimal_point_tuple, radius=0.15)
 
+        selected_top_songs = get_best_match_songs(songs_in_region, input_data.current_mood, input_data.user_id, db)
+
         return {
-            "songs_in_region": songs_in_region
+            "selected_top_songs": selected_top_songs
         }
+    
     except Exception as e:
         logging.error(f"Error in recommend_songs: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
