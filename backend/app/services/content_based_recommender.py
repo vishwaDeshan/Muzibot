@@ -30,7 +30,9 @@ def get_best_match_songs(songs: List[Dict[str, any]], mood: str, user_id: int, d
     user_feature_matrix = get_user_liked_feature_matrix(user_id, mood, db)
     
     if not user_feature_matrix:
-        return songs[:5]  # fallback: return first 5 if no liked songs available
+        # Fallback: use songs with lowest distance
+        sorted_by_distance = sorted(songs, key=lambda x: x.get("distance", float("inf")))
+        return sorted_by_distance[:5]
     
     # Step 2: Compute user preference vector (mean of liked songs)
     user_pref_vector = np.mean(user_feature_matrix, axis=0).reshape(1, -1)
