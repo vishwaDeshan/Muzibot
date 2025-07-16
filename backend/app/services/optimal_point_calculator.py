@@ -52,7 +52,8 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
         'confident': {'valence': (0.7, 0.9), 'arousal': (0.5, 0.7)},
         'less sad': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.2)},
         'less angry': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.3)},
-        'less anxious': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.3)}
+        'less anxious': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.3)},
+        'sleepy': {'valence': (-0.3, 0.0), 'arousal': (-0.9, -0.7)}
     }
 
     # Step 3: Calculate valence and arousal for each component
