@@ -71,6 +71,7 @@ class SongRating(Base):
     speechiness = Column(Float, nullable=True)
     liveness = Column(Float, nullable=True)
     tempo = Column(Float, nullable=True)
+    loudness = Column(Float, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 

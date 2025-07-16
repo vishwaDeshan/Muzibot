@@ -255,7 +255,9 @@ class RLRecommendationAgent:
                              reward, next_mood_idx, next_rating_idx, next_arousal_idx, next_valence_idx)
         self._save_q_table_for_song(song_id, q_table, arousal_idx, valence_idx)
 
-    def save_rating(self, song_id: str, rating: int, mood: str, arousal: float, valence: float, context: str = None):
+    def save_rating(self, song_id: str, rating: int, mood: str, arousal: float, valence: float,
+                    danceability: float, energy: float, acousticness: float, instrumentalness: float, speechiness: float, 
+                    liveness: float, tempo: float, loudness:float, context: str = None ):
         # Check for existing rating
         existing_rating = self.db.query(SongRating).filter(
             SongRating.user_id == self.user_id,
@@ -266,6 +268,14 @@ class RLRecommendationAgent:
             existing_rating.mood_at_rating = mood
             existing_rating.arousal = arousal
             existing_rating.valence = valence
+            existing_rating.danceability = danceability
+            existing_rating.energy=energy
+            existing_rating.acousticness = acousticness
+            existing_rating.instrumentalness = instrumentalness
+            existing_rating.speechiness = speechiness
+            existing_rating.liveness = liveness
+            existing_rating.tempo = tempo
+            existing_rating.loudness= loudness
             existing_rating.context = context
             existing_rating.updated_at = datetime.utcnow()
         else:
@@ -276,15 +286,16 @@ class RLRecommendationAgent:
                 mood_at_rating=mood,
                 arousal=arousal,
                 valence=valence,
-                context=context,
-                # Explicitly set nullable fields to None
-                danceability=None,
-                energy=None,
-                acousticness=None,
-                instrumentalness=None,
-                speechiness=None,
-                liveness=None,
-                tempo=None
+                danceability=danceability,
+                energy=energy,
+                acousticness=acousticness,
+                instrumentalness=instrumentalness,
+                speechiness=speechiness,
+                liveness=liveness,
+                tempo=tempo,
+                loudness = loudness,
+                context=context
+
             )
             self.db.add(new_rating)
         try:
