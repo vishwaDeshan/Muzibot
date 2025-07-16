@@ -152,12 +152,6 @@ class RLRecommendationAgent:
         }
 
     def get_generalized_weights(self, mood: str, prev_rating: int = None):
-        if mood not in self.moods:
-            logging.warning(f"Invalid mood '{mood}', defaulting to 'Happy'")
-            mood = 'Happy'
-        if prev_rating not in self.ratings:
-            logging.warning(f"Invalid or missing prev_rating '{prev_rating}', defaulting to 3")
-            prev_rating = 3
 
         # Check RLWeights for existing weights
         weights_entry = self.db.query(RLWeights).filter(
@@ -165,21 +159,22 @@ class RLRecommendationAgent:
             RLWeights.mood == mood
         ).first()
 
-        if weights_entry:
+        # Check if the user has rated songs for this mood
+        rated_songs = self.db.query(SongRating).filter(
+            SongRating.user_id == self.user_id,
+            SongRating.mood_at_rating == mood
+        ).all()
+
+        # If weights exist and no new ratings exist, return stored weights
+        if weights_entry and not rated_songs:
             return {
                 'similar_users_music_prefs': weights_entry.weight_similar_users_music_prefs,
                 'current_user_mood': weights_entry.weight_current_user_mood,
                 'desired_mood_after_listening': weights_entry.weight_desired_mood_after_listening
             }
 
-        # For new users, compute weights by averaging over rated songs
-        rated_songs = self.db.query(SongRating).filter(
-            SongRating.user_id == self.user_id,
-            SongRating.mood_at_rating == mood
-        ).all()
-
+        # If no ratings exist (first time), use default weights
         if not rated_songs:
-            # No ratings, use default weights and save
             weights = {
                 'similar_users_music_prefs': 0.5,
                 'current_user_mood': 0.3,
@@ -194,6 +189,7 @@ class RLRecommendationAgent:
             'current_user_mood': 0.0,
             'desired_mood_after_listening': 0.0
         }
+        
         count = 0
         for song in rated_songs:
             try:
@@ -246,12 +242,6 @@ class RLRecommendationAgent:
         logging.info(f"Saved normalized weights for user {self.user_id}, mood {mood}: {normalized_weights}")
 
     def train(self, song_id: str, mood: str, prev_rating: int, new_rating: int, next_mood: str):
-        if mood not in self.moods:
-            logging.warning(f"Invalid mood '{mood}', defaulting to 'Happy'")
-            mood = 'Happy'
-        if next_mood not in self.moods:
-            logging.warning(f"Invalid next_mood '{next_mood}', defaulting to 'Happy'")
-            next_mood = 'Happy'
         song = self.db.query(SongRating).filter(SongRating.song_id == song_id).first()
         arousal = song.arousal if song and song.arousal is not None else 0.5
         valence = song.valence if song and song.valence is not None else 0.5
