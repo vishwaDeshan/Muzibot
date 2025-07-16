@@ -41,6 +41,14 @@ class SongRatingInput(BaseModel):
     next_mood: str
     arousal: float
     valence: float
+    danceability: float
+    energy: float
+    acousticness: float
+    instrumentalness: float
+    speechiness: float
+    liveness: float
+    tempo: float
+    loudness: float
     context: Optional[str] = None
 
 @router.post("/rate-song")
@@ -78,6 +86,14 @@ async def rate_song(input_data: SongRatingInput, db: Session = Depends(get_db)):
                 mood=input_data.current_mood,
                 arousal=input_data.arousal,
                 valence=input_data.valence,
+                danceability=input_data.danceability,
+                energy=input_data.energy,
+                acousticness=input_data.acousticness,
+                instrumentalness=input_data.instrumentalness,
+                speechiness=input_data.speechiness,
+                liveness=input_data.liveness,
+                tempo=input_data.tempo,
+                loudness = input_data.loudness,
                 context=input_data.context
             )
         except Exception as e:
