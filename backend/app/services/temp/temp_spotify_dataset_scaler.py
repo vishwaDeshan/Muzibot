@@ -4,12 +4,12 @@ import matplotlib.pyplot as plt # type: ignore
 import seaborn as sns # type: ignore
 
 # Define output directory
-output_dir = "../datasets"
+output_dir = "../../datasets"
 os.makedirs(output_dir, exist_ok=True)
 print("Output directory:", os.path.abspath(output_dir))
 
 # Define input and output file paths
-input_file = "../datasets/temp_spotify_dataset.csv"
+input_file = "../../datasets/temp_spotify_dataset.csv"
 output_file = os.path.join(output_dir, "temp_spotify_dataset_scaled.csv")
 
 # Load the dataset
@@ -49,7 +49,7 @@ plt.text(0.5, -0.5, "Relaxed", fontsize=12, ha='center', va='center')
 plt.tight_layout()
 
 # Save the plot
-output_dir = "../artifacts/plots"
+output_dir = "../../artifacts/plots/temp"
 os.makedirs(output_dir, exist_ok=True)
 output_file = os.path.join(output_dir, "energy_valence_scatter.png")
 plt.savefig(output_file, bbox_inches='tight', dpi=300)
