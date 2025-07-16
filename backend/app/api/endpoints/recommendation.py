@@ -46,89 +46,161 @@ class SongRatingInput(BaseModel):
 @router.post("/rate-song")
 async def rate_song(input_data: SongRatingInput, db: Session = Depends(get_db)):
     try:
-        # Validate user
-        user = db.query(User).filter(User.id == input_data.user_id).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+        # 1. Validate user
+        try:
+            user = db.query(User).filter(User.id == input_data.user_id).first()
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+        except Exception as e:
+            logging.exception(f"Error validating user: {str(e)}")
+            raise HTTPException(status_code=500, detail="Database error while validating user")
 
-        # Validate rating
-        if input_data.rating < 1 or input_data.rating > 5:
-            raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
+        # 2. Validate rating
+        try:
+            if input_data.rating < 1 or input_data.rating > 5:
+                raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
+        except Exception as e:
+            logging.exception(f"Rating validation error: {str(e)}")
+            raise HTTPException(status_code=400, detail="Invalid rating value")
 
-        # Initialize RL agent
-        rl_agent = RLRecommendationAgent(db, input_data.user_id)
+        # 3. Initialize RL agent
+        try:
+            rl_agent = RLRecommendationAgent(db, input_data.user_id)
+        except Exception as e:
+            logging.exception(f"Error initializing RL agent: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to initialize recommendation agent")
 
-        # Save the rating
-        rl_agent.save_rating(input_data.song_id, input_data.rating, input_data.current_mood, input_data.arousal, input_data.valence, input_data.context)
+        # 4. Save the rating
+        try:
+            rl_agent.save_rating(
+                song_id=input_data.song_id,
+                rating=input_data.rating,
+                mood=input_data.current_mood,
+                arousal=input_data.arousal,
+                valence=input_data.valence,
+                context=input_data.context
+            )
+        except Exception as e:
+            logging.exception(f"Error saving song rating: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to save song rating")
 
-        # Train the RL model
-        rl_agent.train(
-            song_id=input_data.song_id,
-            mood=input_data.current_mood,
-            prev_rating=input_data.previous_rating,
-            new_rating=input_data.rating,
-            next_mood=input_data.next_mood
-        )
+        # 5. Train the RL model
+        try:
+            rl_agent.train(
+                song_id=input_data.song_id,
+                mood=input_data.current_mood,
+                prev_rating=input_data.previous_rating,
+                new_rating=input_data.rating,
+                next_mood=input_data.next_mood
+            )
+        except Exception as e:
+            logging.exception(f"Error training RL model: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to train RL model")
 
+        # 6. Success response
         return {"message": "Rating saved and RL model trained successfully"}
+
+    except HTTPException as http_exc:
+        raise http_exc  # Allow known HTTP errors to bubble up
+    except ValueError as ve:
+        logging.exception(f"Value error in rate_song: {str(ve)}")
+        raise HTTPException(status_code=400, detail=f"Invalid input: {str(ve)}")
     except Exception as e:
-        logging.error(f"Error in rate_song: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
+        logging.exception(f"Unexpected error in rate_song: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error while rating song")
 
 @router.post("/recommend-songs")
 async def recommend_songs(input_data: RecommendationInput, db: Session = Depends(get_db)):
     try:
-        # Validate user
-        user = db.query(User).filter(User.id == input_data.user_id).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+        # 1. Validate user
+        try:
+            user = db.query(User).filter(User.id == input_data.user_id).first()
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+        except Exception as e:
+            logging.error(f"Error validating user: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error validating user")
 
-        # Initialize RL agent
-        rl_agent = RLRecommendationAgent(db, input_data.user_id)
+        # 2. Initialize RL agent
+        try:
+            rl_agent = RLRecommendationAgent(db, input_data.user_id)
+        except Exception as e:
+            logging.error(f"Error initializing RL agent: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error initializing recommendation agent")
 
-        # Get generalized weights
+        # 3. Get generalized RL weights
         try:
             rl_weights = rl_agent.get_generalized_weights(
                 mood=input_data.current_mood,
-                prev_rating=input_data.previous_rating or 3  # Default to 3 if None
+                prev_rating=input_data.previous_rating or 3
             )
         except Exception as e:
             logging.error(f"Failed to get generalized weights: {str(e)}")
             raise HTTPException(status_code=500, detail="Failed to compute generalized weights")
 
-        # Find similar users
-        similar_users_music_prefs = find_similar_users(
-            input_age=input_data.age,
-            input_sex=input_data.sex,
-            input_profession=input_data.profession,
-            input_fav_music_genres=input_data.fav_music_genres,  
-            user_current_mood=input_data.current_mood            
-        )
-        if similar_users_music_prefs is None:
-            raise HTTPException(status_code=404, detail="No similar songs found.")
+        # 4. Find similar users
+        try:
+            similar_users_music_prefs = find_similar_users(
+                input_age=input_data.age,
+                input_sex=input_data.sex,
+                input_profession=input_data.profession,
+                input_fav_music_genres=input_data.fav_music_genres,
+                user_current_mood=input_data.current_mood
+            )
+            if similar_users_music_prefs is None:
+                raise HTTPException(status_code=404, detail="No similar songs found")
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            logging.error(f"Error finding similar users: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error finding similar users")
 
-        # Calculate the optimal point
-        optimal_point = calculate_optimal_point(
-            similar_users_music_prefs=similar_users_music_prefs,
-            current_mood=input_data.current_mood,
-            desired_mood_after_listening=input_data.desired_mood,
-            rl_weights=rl_weights
-        )
+        # 5. Calculate the optimal point
+        try:
+            optimal_point = calculate_optimal_point(
+                similar_users_music_prefs=similar_users_music_prefs,
+                current_mood=input_data.current_mood,
+                desired_mood_after_listening=input_data.desired_mood,
+                rl_weights=rl_weights
+            )
+            optimal_point_tuple = (optimal_point["valence"], optimal_point["arousal"])
+        except Exception as e:
+            logging.error(f"Error calculating optimal point: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error calculating optimal point")
 
-        optimal_point_tuple = (optimal_point["valence"], optimal_point["arousal"])
+        # 6. Find songs in region
+        try:
+            songs_in_region = find_songs_in_region(optimal_point=optimal_point_tuple, radius=0.15)
+            if not songs_in_region:
+                raise HTTPException(status_code=404, detail="No songs found in optimal region")
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            logging.error(f"Error finding songs in region: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error finding songs in optimal region")
 
-        # Find songs in circular region around optimal point
-        songs_in_region = find_songs_in_region(optimal_point=optimal_point_tuple, radius=0.15)
+        # 7. Get top matching songs
+        try:
+            selected_top_songs = get_best_match_songs(
+                songs_in_region,
+                input_data.current_mood,
+                input_data.user_id,
+                db
+            )
+        except Exception as e:
+            logging.error(f"Error getting best match songs: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error selecting top songs")
 
-        selected_top_songs = get_best_match_songs(songs_in_region, input_data.current_mood, input_data.user_id, db)
-
+        # 8. Return result
         return {
             "selected_top_songs": selected_top_songs
         }
-    
+
+    except HTTPException as http_exc:
+        raise http_exc  # Already handled HTTP exceptions
     except Exception as e:
-        logging.error(f"Error in recommend_songs: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
+        logging.error(f"Unhandled error in recommend_songs: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error during song recommendation")
 
 @router.post("/find-similar-users")
 async def find_similar_users_route(input_data: UserInput, db: Session = Depends(get_db)):
