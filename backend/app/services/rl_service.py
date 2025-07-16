@@ -59,7 +59,12 @@ class RLRecommendationAgent:
                     for w_current_idx in range(self.num_weights):
                         for w_desired_idx in range(self.num_weights):
                             q_value = q_table[mood_idx, rating_idx, arousal_idx, valence_idx,
-                                              w_similar_idx, w_current_idx, w_desired_idx]
+                                            w_similar_idx, w_current_idx, w_desired_idx]
+
+                            # Skip saving zero or near-zero Q-values
+                            if abs(q_value) < 1e-6:
+                                continue
+
                             entry = self.db.query(RLQTable).filter(
                                 RLQTable.user_id == self.user_id,
                                 RLQTable.song_id == song_id,
