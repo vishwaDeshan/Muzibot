@@ -26,33 +26,33 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
 
     # Step 2: Map music preferences and moods to valence and arousal values
     music_prefs_to_valence_arousal = {
-        'Joyful music': {'valence': (0.5, 0.7), 'arousal': (0.3, 0.5)},
-        'Relaxing music': {'valence': (0.1, 0.3), 'arousal': (-0.7, -0.5)},
-        'Sad music': {'valence': (-0.7, -0.5), 'arousal': (-0.3, -0.1)},
-        'Aggressive music': {'valence': (-0.5, -0.3), 'arousal': (0.7, 0.9)}
+        'Joyful music': {'valence': (0.6, 0.9), 'arousal': (0.4, 0.7)},
+        'Relaxing music': {'valence': (0.4, 0.6), 'arousal': (-0.7, -0.5)},
+        'Sad music': {'valence': (-0.9, -0.7), 'arousal': (-0.4, -0.1)},
+        'Aggressive music': {'valence': (-0.9, -0.6), 'arousal': (0.6, 0.9)}
     }
 
     user_current_mood_to_valence_arousal = {
-        'Happy': {'valence': (0.7, 0.9), 'arousal': (0.1, 0.3)},
-        'Sad': {'valence': (-0.9, -0.7), 'arousal': (-0.5, -0.3)},
-        'Angry': {'valence': (-0.7, -0.5), 'arousal': (0.7, 0.9)},
-        'Relaxed': {'valence': (0.3, 0.5), 'arousal': (-0.9, -0.7)}
+        'Happy': {'valence': (0.7, 1.0), 'arousal': (0.3, 0.6)},
+        'Sad': {'valence': (-1.0, -0.7), 'arousal': (-0.6, -0.3)},
+        'Angry': {'valence': (-0.8, -0.5), 'arousal': (0.7, 1.0)},
+        'Relaxed': {'valence': (0.5, 0.7), 'arousal': (-0.8, -0.6)}
     }
 
     desired_mood_to_valence_arousal = {
-        'calm': {'valence': (0.55, 0.65), 'arousal': (0.15, 0.25)},
-        'happy': {'valence': (0.85, 0.95), 'arousal': (0.55, 0.65)},
-        'energized': {'valence': (0.65, 0.75), 'arousal': (0.75, 0.85)},
-        'relaxed': {'valence': (0.65, 0.75), 'arousal': (0.15, 0.25)},
-        'motivated': {'valence': (0.75, 0.85), 'arousal': (0.65, 0.75)},
-        'focused': {'valence': (0.55, 0.65), 'arousal': (0.45, 0.55)},
-        'excited': {'valence': (0.85, 0.95), 'arousal': (0.75, 0.85)},
-        'romantic': {'valence': (0.75, 0.85), 'arousal': (0.35, 0.45)},
-        'inspired': {'valence': (0.75, 0.85), 'arousal': (0.55, 0.65)},
-        'confident': {'valence': (0.75, 0.85), 'arousal': (0.65, 0.75)},
-        'less sad': {'valence': (0.45, 0.55), 'arousal': (0.35, 0.45)},
-        'less angry': {'valence': (0.45, 0.55), 'arousal': (0.25, 0.35)},
-        'less anxious': {'valence': (0.45, 0.55), 'arousal': (0.25, 0.35)}
+        'calm': {'valence': (0.5, 0.7), 'arousal': (0.0, 0.2)},
+        'happy': {'valence': (0.8, 1.0), 'arousal': (0.5, 0.7)},
+        'energized': {'valence': (0.6, 0.9), 'arousal': (0.7, 0.9)},
+        'relaxed': {'valence': (0.6, 0.8), 'arousal': (-0.5, -0.2)},
+        'motivated': {'valence': (0.7, 0.9), 'arousal': (0.7, 0.9)},
+        'focused': {'valence': (0.5, 0.7), 'arousal': (0.2, 0.4)},
+        'excited': {'valence': (0.8, 1.0), 'arousal': (0.8, 1.0)},
+        'romantic': {'valence': (0.6, 0.9), 'arousal': (0.2, 0.4)},
+        'inspired': {'valence': (0.7, 0.9), 'arousal': (0.5, 0.7)},
+        'confident': {'valence': (0.7, 0.9), 'arousal': (0.5, 0.7)},
+        'less sad': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.2)},
+        'less angry': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.3)},
+        'less anxious': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.3)}
     }
 
     # Step 3: Calculate valence and arousal for each component
