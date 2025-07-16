@@ -6,20 +6,20 @@ from app.database import Base
 class RLQTable(Base):
     __tablename__ = "rl_q_table"
     __table_args__ = (
-        CheckConstraint('arousal >= 0 AND arousal <= 1', name='check_arousal_range'),
-        CheckConstraint('valence >= 0 AND valence <= 1', name='check_valence_range'),
+        CheckConstraint('arousal >= -1 AND arousal <= 1', name='check_arousal_range'),
+        CheckConstraint('valence >= -1 AND valence <= 1', name='check_valence_range'),
         CheckConstraint('weight_similar_users_music_prefs_idx >= 0 AND weight_similar_users_music_prefs_idx <= 4', name='check_similar_users_idx'),
         CheckConstraint('weight_current_user_mood_idx >= 0 AND weight_current_user_mood_idx <= 4', name='check_current_mood_idx'),
         CheckConstraint('weight_desired_mood_after_listening_idx >= 0 AND weight_desired_mood_after_listening_idx <= 4', name='check_desired_mood_idx'),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     song_id = Column(String, nullable=False, index=True)
     mood = Column(String, nullable=False)
     prev_rating = Column(Integer, CheckConstraint('prev_rating >= 1 AND prev_rating <= 5'), nullable=False)
-    arousal = Column(Float, nullable=True)  # Arousal coordinate [0, 1]
-    valence = Column(Float, nullable=True)  # Valence coordinate [0, 1]
+    arousal = Column(Float, nullable=True)  # Arousal coordinate [-1, 1]
+    valence = Column(Float, nullable=True)  # Valence coordinate [-1, 1]
     weight_similar_users_music_prefs_idx = Column(Integer, nullable=False)  # Index for weight_values [0, 4]
     weight_current_user_mood_idx = Column(Integer, nullable=False)  # Index for weight_values [0, 4]
     weight_desired_mood_after_listening_idx = Column(Integer, nullable=False)  # Index for weight_values [0, 4]
@@ -52,11 +52,11 @@ class RLWeights(Base):
 class SongRating(Base):
     __tablename__ = "song_ratings"
     __table_args__ = (
-        CheckConstraint('arousal >= 0 AND arousal <= 1', name='check_song_arousal_range'),
-        CheckConstraint('valence >= 0 AND valence <= 1', name='check_song_valence_range'),
+        CheckConstraint('arousal >= -1 AND arousal <= 1', name='check_song_arousal_range'),
+        CheckConstraint('valence >= -1 AND valence <= 1', name='check_song_valence_range'),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     song_id = Column(String, nullable=False)  # Spotify song ID
     rating = Column(Integer, CheckConstraint('rating >= 1 AND rating <= 5'), nullable=False)  # 1 to 5
