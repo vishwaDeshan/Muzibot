@@ -6,9 +6,15 @@ def transform_to_range(valence, arousal):
     transformed_arousal = (arousal - 0.5) * 2
     return transformed_valence, transformed_arousal
 
+# Note: use this, if need to move optimal point slightly for same info but in various attempts
+# def sample_valence_arousal_from_range(valence_range, arousal_range):
+#     valence = random.uniform(*valence_range)
+#     arousal = random.uniform(*arousal_range)
+#     return valence, arousal
+
 def sample_valence_arousal_from_range(valence_range, arousal_range):
-    valence = random.uniform(*valence_range)
-    arousal = random.uniform(*arousal_range)
+    valence = (valence_range[0] + valence_range[1]) / 2
+    arousal = (arousal_range[0] + arousal_range[1]) / 2
     return valence, arousal
 
 def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_mood_after_listening='calm', 
