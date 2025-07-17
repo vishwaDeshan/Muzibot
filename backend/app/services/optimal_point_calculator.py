@@ -1,14 +1,15 @@
 import numpy as np # type: ignore
 import random
 
-def transform_to_range(valence, arousal):
-    transformed_valence = (valence - 0.5) * 2
-    transformed_arousal = (arousal - 0.5) * 2
-    return transformed_valence, transformed_arousal
+# Note: use this, if need to move optimal point slightly for same info but in various attempts
+# def valence_arousal_from_range(valence_range, arousal_range):
+#     valence = random.uniform(*valence_range)
+#     arousal = random.uniform(*arousal_range)
+#     return valence, arousal
 
-def sample_valence_arousal_from_range(valence_range, arousal_range):
-    valence = random.uniform(*valence_range)
-    arousal = random.uniform(*arousal_range)
+def valence_arousal_from_range(valence_range, arousal_range):
+    valence = (valence_range[0] + valence_range[1]) / 2
+    arousal = (arousal_range[0] + arousal_range[1]) / 2
     return valence, arousal
 
 def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_mood_after_listening='calm', 
@@ -25,23 +26,34 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
 
     # Step 2: Map music preferences and moods to valence and arousal values
     music_prefs_to_valence_arousal = {
-        'Joyful music': {'valence': (0.75, 0.85), 'arousal': (0.65, 0.75)},
-        'Relaxing music': {'valence': (0.55, 0.65), 'arousal': (0.25, 0.35)},
-        'Sad music': {'valence': (0.15, 0.25), 'arousal': (0.35, 0.45)},
-        'Aggressive music': {'valence': (0.25, 0.35), 'arousal': (0.85, 0.95)}
+        'Joyful music': {'valence': (0.6, 0.9), 'arousal': (0.4, 0.7)},
+        'Relaxing music': {'valence': (0.4, 0.6), 'arousal': (-0.7, -0.5)},
+        'Sad music': {'valence': (-0.9, -0.7), 'arousal': (-0.4, -0.1)},
+        'Aggressive music': {'valence': (-0.9, -0.6), 'arousal': (0.6, 0.9)}
     }
 
     user_current_mood_to_valence_arousal = {
-        'Happy': {'valence': (0.85, 0.95), 'arousal': (0.55, 0.65)},
-        'Sad': {'valence': (0.15, 0.25), 'arousal': (0.25, 0.35)},
-        'Angry': {'valence': (0.25, 0.35), 'arousal': (0.75, 0.85)},
-        'Relaxed': {'valence': (0.65, 0.75), 'arousal': (0.15, 0.25)}
+        'Happy': {'valence': (0.7, 1.0), 'arousal': (0.3, 0.6)},
+        'Sad': {'valence': (-1.0, -0.7), 'arousal': (-0.6, -0.3)},
+        'Angry': {'valence': (-0.8, -0.5), 'arousal': (0.7, 1.0)},
+        'Relaxed': {'valence': (0.5, 0.7), 'arousal': (-0.8, -0.6)}
     }
 
     desired_mood_to_valence_arousal = {
-        'calm': {'valence': (0.55, 0.65), 'arousal': (0.15, 0.25)},
-        'happy': {'valence': (0.85, 0.95), 'arousal': (0.55, 0.65)},
-        'energetic': {'valence': (0.65, 0.75), 'arousal': (0.75, 0.85)}
+        'calm': {'valence': (0.5, 0.7), 'arousal': (0.0, 0.2)},
+        'happy': {'valence': (0.8, 1.0), 'arousal': (0.5, 0.7)},
+        'energized': {'valence': (0.6, 0.9), 'arousal': (0.7, 0.9)},
+        'relaxed': {'valence': (0.6, 0.8), 'arousal': (-0.5, -0.2)},
+        'motivated': {'valence': (0.7, 0.9), 'arousal': (0.7, 0.9)},
+        'focused': {'valence': (0.5, 0.7), 'arousal': (0.2, 0.4)},
+        'excited': {'valence': (0.8, 1.0), 'arousal': (0.8, 1.0)},
+        'romantic': {'valence': (0.6, 0.9), 'arousal': (0.2, 0.4)},
+        'inspired': {'valence': (0.7, 0.9), 'arousal': (0.5, 0.7)},
+        'confident': {'valence': (0.7, 0.9), 'arousal': (0.5, 0.7)},
+        'less sad': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.2)},
+        'less angry': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.3)},
+        'less anxious': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.3)},
+        'sleepy': {'valence': (-0.3, 0.0), 'arousal': (-0.9, -0.7)}
     }
 
     # Step 3: Calculate valence and arousal for each component
@@ -53,10 +65,9 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
         if pref in music_prefs_to_valence_arousal:
             val_range = music_prefs_to_valence_arousal[pref]['valence']
             aro_range = music_prefs_to_valence_arousal[pref]['arousal']
-            valence, arousal = sample_valence_arousal_from_range(val_range, aro_range)
-            transformed_valence, transformed_arousal = transform_to_range(valence, arousal)
-            similar_users_prefs_valence_values.append(transformed_valence)
-            similar_users_prefs_arousal_values.append(transformed_arousal)
+            valence, arousal = valence_arousal_from_range(val_range, aro_range)
+            similar_users_prefs_valence_values.append(valence)
+            similar_users_prefs_arousal_values.append(arousal)
         else:
             print(f"Warning: '{pref}' not found in music preferences mapping, skipping.")
 
@@ -72,8 +83,7 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
     if current_user_mood in user_current_mood_to_valence_arousal:
         val_range = user_current_mood_to_valence_arousal[current_user_mood]['valence']
         aro_range = user_current_mood_to_valence_arousal[current_user_mood]['arousal']
-        valence, arousal = sample_valence_arousal_from_range(val_range, aro_range)
-        current_mood_valence, current_mood_arousal = transform_to_range(valence, arousal)
+        current_mood_valence, current_mood_arousal = valence_arousal_from_range(val_range, aro_range)
         print(f"Current user mood (valence, arousal): "
               f"({current_mood_valence:.2f}, {current_mood_arousal:.2f})")
     else:
@@ -84,10 +94,9 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
     if desired_mood_after_listening in desired_mood_to_valence_arousal:
         val_range = desired_mood_to_valence_arousal[desired_mood_after_listening]['valence']
         aro_range = desired_mood_to_valence_arousal[desired_mood_after_listening]['arousal']
-        valence, arousal = sample_valence_arousal_from_range(val_range, aro_range)
-        desired_mood_valence, desired_mood_arousal = transform_to_range(valence, arousal)
+        desired_mood_valence, desired_mood_arousal = valence_arousal_from_range(val_range, aro_range)
         print(f"Desired user mood after listening (valence, arousal): "
-              f"({desired_mood_valence:.2f}, {desired_mood_arousal:.2f})")
+            f"({desired_mood_valence:.2f}, {desired_mood_arousal:.2f})")
     else:
         print(f"Error: Desired user mood after listening '{desired_mood_after_listening}' not found in mapping.")
         return None

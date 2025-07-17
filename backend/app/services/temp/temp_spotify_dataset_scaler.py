@@ -9,7 +9,7 @@ os.makedirs(output_dir, exist_ok=True)
 print("Output directory:", os.path.abspath(output_dir))
 
 # Define input and output file paths
-input_file = "../../datasets/temp_spotify_dataset.csv"
+input_file = "../../datasets/temp/temp_spotify_dataset.csv"
 output_file = os.path.join(output_dir, "temp_spotify_dataset_scaled.csv")
 
 # Load the dataset

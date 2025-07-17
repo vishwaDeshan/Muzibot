@@ -14,7 +14,7 @@ def find_songs_in_region(optimal_point: Tuple[float, float], radius: float = 0.1
 
     # Define output path
     output_dir = os.path.join(base_dir, '..', 'artifacts', 'plots')
-    output_file = os.path.join(output_dir, "energy_valence_song_region_plot.png")
+    output_file = os.path.join(output_dir, "arousal_valence_song_region_plot.png")
 
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
@@ -23,17 +23,17 @@ def find_songs_in_region(optimal_point: Tuple[float, float], radius: float = 0.1
     print(f"Loading data from: {input_file}")
     df = pd.read_csv(input_file, low_memory=False)
 
-    # Convert energy_scaled and valence_scaled to numeric (handle non-numeric values)
-    df['valence_scaled'] = pd.to_numeric(df['valence_scaled'], errors='coerce')
-    df['energy_scaled'] = pd.to_numeric(df['energy_scaled'], errors='coerce')
+    # Convert arousal_final and valence_final to numeric (handle non-numeric values)
+    df['valence_final'] = pd.to_numeric(df['valence_final'], errors='coerce')
+    df['arousal_final'] = pd.to_numeric(df['arousal_final'], errors='coerce')
 
     # Extract optimal point coordinates
     opt_valence, opt_energy = optimal_point
 
     # Calculate Euclidean distance from optimal point
     df['distance'] = np.sqrt(
-        (df['valence_scaled'] - opt_valence) ** 2 +
-        (df['energy_scaled'] - opt_energy) ** 2
+        (df['valence_final'] - opt_valence) ** 2 +
+        (df['arousal_final'] - opt_energy) ** 2
     )
 
     # Filter out non-finite distances
@@ -42,7 +42,7 @@ def find_songs_in_region(optimal_point: Tuple[float, float], radius: float = 0.1
 
     # Filter songs within the radius
     songs_in_region = df[df['distance'] <= radius][[
-        'song_name', 'genre', 'energy_scaled', 'valence_scaled', 'distance', 'uri', 
+        'track_name', 'playlist_genre', 'arousal_final', 'valence_final', 'distance', 'track_id', 
         'danceability', 'energy', 'loudness', 'speechiness', 'acousticness', 'instrumentalness', 
         'liveness', 'valence', 'tempo'
     ]]
@@ -53,24 +53,24 @@ def find_songs_in_region(optimal_point: Tuple[float, float], radius: float = 0.1
 
     # Ensure all values in result are JSON-compliant
     for record in result:
-        for key in ['energy_scaled', 'valence_scaled', 'distance']:
+        for key in ['arousal_final', 'valence_final', 'distance']:
             if not np.isfinite(record[key]):
                 record[key] = None  # Replace non-finite values with None
-        # Ensure song_name and genre are strings (handle potential None or non-string types)
-        record['song_name'] = str(record['song_name']) if pd.notna(record['song_name']) else "Unknown"
-        record['genre'] = str(record['genre']) if pd.notna(record['genre']) else "Unknown"
-        record ['uri'] = str(record['uri'] if pd.notna(record['uri']) else "Unknown")
+        # Ensure track_name and playlist_genre are strings (handle potential None or non-string types)
+        record['track_name'] = str(record['track_name']) if pd.notna(record['track_name']) else "Unknown"
+        record['playlist_genre'] = str(record['playlist_genre']) if pd.notna(record['playlist_genre']) else "Unknown"
+        record ['track_id'] = str(record['track_id'] if pd.notna(record['track_id']) else "Unknown")
 
     # **** Create scatter plot ****
 
     plt.figure(figsize=(10, 8))
 
     # All songs in green
-    sns.scatterplot(data=df, x='valence_scaled', y='energy_scaled',
+    sns.scatterplot(data=df, x='valence_final', y='arousal_final',
                     color='green', s=20, alpha=0.6, label='All Songs')
 
     # Recommended songs in red
-    sns.scatterplot(data=songs_in_region, x='valence_scaled', y='energy_scaled',
+    sns.scatterplot(data=songs_in_region, x='valence_final', y='arousal_final',
                     color='red', s=30, alpha=0.8, label='Recommended Songs')
 
     # Plot optimal point
@@ -120,8 +120,8 @@ def find_songs_in_region(optimal_point: Tuple[float, float], radius: float = 0.1
 #         print(f"\nRecommended songs within radius {radius} of optimal point {sample_optimal_point}:")
 #         if recommended_songs:
 #             for song in recommended_songs:
-#                 print(f"Song: {song['song_name']}, Genre: {song['genre']}, "
-#                       f"Valence: {song['valence_scaled']:.3f}, Energy: {song['energy_scaled']:.3f}, "
+#                 print(f"Song: {song['track_name']}, playlist_genre: {song['playlist_genre']}, "
+#                       f"Valence: {song['valence_final']:.3f}, Energy: {song['arousal_final']:.3f}, "
 #                       f"Distance: {song['distance']:.3f}")
 #         else:
 #             print("No songs found within the specified radius.")
