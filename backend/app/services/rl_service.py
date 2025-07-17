@@ -14,7 +14,6 @@ class RLRecommendationAgent:
         self.ratings = [1, 2, 3, 4, 5]
         self.weight_values = np.linspace(0.1, 0.5, 5)  # [0.1, 0.2, 0.3, 0.4, 0.5]
         self.num_weights = len(self.weight_values)
-        # Adjusted bins to handle negative arousal values and ensure proper discretization
         self.arousal_bins = np.linspace(-1, 1, 5)  # Discretize arousal (-1 to 1)
         self.valence_bins = np.linspace(0, 1, 5)  # Discretize valence (0 to 1)
         
@@ -56,9 +55,9 @@ class RLRecommendationAgent:
                     entry.weight_current_user_mood_idx, 
                     entry.weight_desired_mood_after_listening_idx] = entry.q_value
         
-        return q_table, arousal_idx, valence_idx
+        return q_table, arousal_idx, valence_idx, song.arousal if song else 0.5, song.valence if song else 0.5
 
-    def _save_q_table_for_song(self, song_id: str, q_table: np.ndarray, arousal_idx: int, valence_idx: int):
+    def _save_q_table_for_song(self, song_id: str, q_table: np.ndarray, arousal_idx: int, valence_idx: int, exact_arousal: float, exact_valence: float):
         try:
             for mood_idx, mood in enumerate(self.moods):
                 for rating_idx, rating in enumerate(self.ratings):
@@ -75,8 +74,8 @@ class RLRecommendationAgent:
                                     RLQTable.song_id == song_id,
                                     RLQTable.mood == mood,
                                     RLQTable.prev_rating == rating,
-                                    RLQTable.arousal == self.arousal_bins[arousal_idx],
-                                    RLQTable.valence == self.valence_bins[valence_idx],
+                                    RLQTable.arousal == exact_arousal,
+                                    RLQTable.valence == exact_valence,
                                     RLQTable.weight_similar_users_music_prefs_idx == w_similar_idx,
                                     RLQTable.weight_current_user_mood_idx == w_current_idx,
                                     RLQTable.weight_desired_mood_after_listening_idx == w_desired_idx
@@ -90,8 +89,8 @@ class RLRecommendationAgent:
                                         song_id=song_id,
                                         mood=mood,
                                         prev_rating=rating,
-                                        arousal=self.arousal_bins[arousal_idx],
-                                        valence=self.valence_bins[valence_idx],
+                                        arousal=exact_arousal,
+                                        valence=exact_valence,
                                         weight_similar_users_music_prefs_idx=w_similar_idx,
                                         weight_current_user_mood_idx=w_current_idx,
                                         weight_desired_mood_after_listening_idx=w_desired_idx,
@@ -107,8 +106,8 @@ class RLRecommendationAgent:
     def _get_state_index(self, mood: str, prev_rating: int, arousal: float, valence: float):
         mood_idx = self.moods.index(mood) if mood in self.moods else 0
         rating_idx = self.ratings.index(prev_rating) if prev_rating in self.ratings else 0
-        arousal = max(min(arousal, 1), -1)  # Clamp arousal to [-1, 1]
-        valence = max(min(valence, 1), 0)   # Clamp valence to [0, 1]
+        arousal = max(min(arousal, 1), -1)
+        valence = max(min(valence, 1), 0)
         arousal_idx = np.digitize(arousal, self.arousal_bins, right=True) - 1
         valence_idx = np.digitize(valence, self.valence_bins, right=True) - 1
         arousal_idx = max(0, min(arousal_idx, len(self.arousal_bins) - 2))
@@ -144,7 +143,7 @@ class RLRecommendationAgent:
             w_desired_idx = np.random.randint(self.num_weights)
         else:
             slice = q_table[mood_idx, rating_idx, arousal_idx, valence_idx, :, :, :]
-            if np.max(slice) == 0:  # If Q-values are all zero, initialize with random non-zero weights
+            if np.max(slice) == 0:
                 w_similar_idx = np.random.randint(1, self.num_weights)
                 w_current_idx = np.random.randint(1, self.num_weights)
                 w_desired_idx = np.random.randint(1, self.num_weights)
@@ -161,11 +160,11 @@ class RLRecommendationAgent:
         q_table[mood_idx, rating_idx, arousal_idx, valence_idx, w_similar_idx, w_current_idx, w_desired_idx] = new_q
 
     def get_optimized_weights(self, song_id: str, mood: str, prev_rating: int):
-        q_table, arousal_idx, valence_idx = self._load_q_table_for_song(song_id)
+        q_table, arousal_idx, valence_idx, _, _ = self._load_q_table_for_song(song_id)
         mood_idx = self.moods.index(mood) if mood in self.moods else 0
         rating_idx = self.ratings.index(prev_rating) if prev_rating in self.ratings else 0
         slice = q_table[mood_idx, rating_idx, arousal_idx, valence_idx, :, :, :]
-        if np.max(slice) == 0:  # If no Q-values, return default weights
+        if np.max(slice) == 0:
             return {
                 'similar_users_music_prefs': self.weight_values[2],
                 'current_user_mood': self.weight_values[2],
@@ -269,7 +268,7 @@ class RLRecommendationAgent:
         song = self.db.query(SongRating).filter(SongRating.song_id == song_id).first()
         arousal = song.arousal if song and song.arousal is not None else 0.5
         valence = song.valence if song and song.valence is not None else 0.5
-        q_table, arousal_idx, valence_idx = self._load_q_table_for_song(song_id)
+        q_table, arousal_idx, valence_idx, exact_arousal, exact_valence = self._load_q_table_for_song(song_id)
         mood_idx, rating_idx, arousal_idx, valence_idx = self._get_state_index(mood, prev_rating, arousal, valence)
         next_mood_idx, next_rating_idx, next_arousal_idx, next_valence_idx = self._get_state_index(next_mood, new_rating, arousal, valence)
         
@@ -277,7 +276,7 @@ class RLRecommendationAgent:
         w_similar_idx, w_current_idx, w_desired_idx = self._choose_action(q_table, mood_idx, rating_idx, arousal_idx, valence_idx)
         self._update_q_table(q_table, mood_idx, rating_idx, arousal_idx, valence_idx, w_similar_idx, w_current_idx, w_desired_idx,
                              reward, next_mood_idx, next_rating_idx, next_arousal_idx, next_valence_idx)
-        self._save_q_table_for_song(song_id, q_table, arousal_idx, valence_idx)
+        self._save_q_table_for_song(song_id, q_table, arousal_idx, valence_idx, exact_arousal, exact_valence)
 
     def save_rating(self, song_id: str, rating: int, mood: str, arousal: float, valence: float,
                     danceability: float, energy: float, acousticness: float, instrumentalness: float, speechiness: float, 
