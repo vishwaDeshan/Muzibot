@@ -30,7 +30,6 @@ class RecommendationInput(BaseModel):
     fav_music_genres: List[str]
     desired_mood: str
     current_mood: str
-    previous_rating: Optional[int] = None
 
 class SongRatingInput(BaseModel):
     user_id: int
