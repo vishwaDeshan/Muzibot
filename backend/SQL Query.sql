@@ -1,3 +1,5 @@
+ALTER DATABASE "MuziBot" REFRESH COLLATION VERSION;
+
 -- Drop tables if they exist (optional, for clean creation)
 DROP TABLE IF EXISTS song_ratings CASCADE;
 DROP TABLE IF EXISTS rl_weights CASCADE;

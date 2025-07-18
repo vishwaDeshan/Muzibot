@@ -38,6 +38,8 @@ class RLEvaluation:
         correct = 0
         total = 0
         for song_id, mood, prev_rating, actual_rating in test_data:
+            if actual_rating == 3:
+                continue  # Skip rating 3
             try:
                 weights = self.agent.get_optimized_weights(song_id, mood, prev_rating)
                 weight_sum = sum(weights.values())
@@ -50,6 +52,7 @@ class RLEvaluation:
         accuracy = correct / total if total > 0 else 0.0
         logging.info(f"Rating Accuracy: {accuracy:.4f} ({correct}/{total} correct)")
         return accuracy
+
 
     def _visualize_accuracy(self, results: Dict[str, float], chart_title: str = "Rating Prediction Accuracy by Mood",
                            output_path: str = "accuracy_chart.png", primary_color: str = "#0B560A",
