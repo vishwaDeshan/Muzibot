@@ -4,7 +4,6 @@ from pydantic import BaseModel # type: ignore
 from typing import List, Optional
 from app.models.user import User
 from app.database import get_db
-from app.services.text_generation import text_generator
 from app.services.similar_user_finder import find_similar_users
 from app.services.optimal_point_calculator import calculate_optimal_point
 from app.services.find_songs_in_region import find_songs_in_region
