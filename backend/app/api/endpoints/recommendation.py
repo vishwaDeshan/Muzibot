@@ -146,10 +146,7 @@ async def recommend_songs(input_data: RecommendationInput, db: Session = Depends
 
         # 3. Get generalized RL weights
         try:
-            rl_weights = rl_agent.get_generalized_weights(
-                mood=input_data.current_mood,
-                prev_rating=input_data.previous_rating or 3
-            )
+            rl_weights = rl_agent.get_generalized_weights(mood=input_data.current_mood)
         except Exception as e:
             logging.error(f"Failed to get generalized weights: {str(e)}")
             raise HTTPException(status_code=500, detail="Failed to compute generalized weights")
