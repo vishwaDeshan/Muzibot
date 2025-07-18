@@ -2,6 +2,7 @@ import sys
 import os
 import logging
 import matplotlib.pyplot as plt # type: ignore
+from tabulate import tabulate # type: ignore
 from typing import Dict, List, Tuple
 from sqlalchemy.orm import Session # type: ignore
 from sqlalchemy.exc import SQLAlchemyError # type: ignore
@@ -156,6 +157,12 @@ def evaluate_all_users(db: Session = None) -> Dict:
             chart_title="Rating Prediction Accuracy by All Users",
             output_path=os.path.join(output_dir, "accuracy_rl_model.png")
         )
+
+        # Generate accuracy table
+        table_data = [(mood, f"{acc:.2%}") for mood, acc in results.items()]
+        table_str = tabulate(table_data, headers=["Mood", "Accuracy"], tablefmt="grid")
+
+        print("\n" + table_str)  # Optional: print to console
 
         db.close()
 
