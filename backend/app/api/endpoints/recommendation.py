@@ -51,9 +51,6 @@ class SongRatingInput(BaseModel):
     loudness: float
     context: Optional[str] = None
 
-class TestRLAccuracyInput(BaseModel):
-    user_id: int
-
 @router.post("/rate-song")
 async def rate_song(input_data: SongRatingInput, db: Session = Depends(get_db)):
     try:
