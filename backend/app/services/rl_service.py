@@ -18,10 +18,11 @@ class RLRecommendationAgent:
         self.valence_bins = np.linspace(0, 1, 5)  # Discretize valence (0 to 1)
         
         # Learning parameters
-        self.learning_rate = 0.1
-        self.discount_factor = 0.9
-        self.epsilon = 0.1
-        self.similarity_penalty = 0.05
+        self.learning_rate = 0.1         # How much new info overrides old (Q-learning update strength)
+        self.discount_factor = 0.9       # Importance of future rewards vs. immediate rewards
+        self.epsilon = 0.1               # Probability of exploring (vs. exploiting best known action)
+        self.similarity_penalty = 0.05   # Penalty applied for too much similarity in song/user preferences
+
 
     def _init_q_table(self):
         return np.zeros((len(self.moods), len(self.ratings), len(self.arousal_bins), len(self.valence_bins),
@@ -29,7 +30,9 @@ class RLRecommendationAgent:
 
     def _load_q_table_for_song(self, song_id: str):
         q_table = self._init_q_table()
-        song = self.db.query(SongRating).filter(SongRating.song_id == song_id).first()
+        song = self.db.query(SongRating).filter(SongRating.song_id == song_id,
+                                                SongRating.user_id == self.user_id
+        ).first()
         if not song or song.arousal is None or song.valence is None:
             arousal_idx = 0
             valence_idx = 0
@@ -177,7 +180,7 @@ class RLRecommendationAgent:
             'desired_mood_after_listening': self.weight_values[w_desired_idx]
         }
 
-    def get_generalized_weights(self, mood: str, prev_rating: int = None):
+    def get_generalized_weights(self, mood: str):
         weights_entry = self.db.query(RLWeights).filter(
             RLWeights.user_id == self.user_id,
             RLWeights.mood == mood
@@ -213,7 +216,7 @@ class RLRecommendationAgent:
         count = 0
         for song in rated_songs:
             try:
-                song_weights = self.get_optimized_weights(song.song_id, mood, prev_rating)
+                song_weights = self.get_optimized_weights(song.song_id, mood, song.prev_rating)
                 for key in total_weights:
                     total_weights[key] += song_weights[key]
                 count += 1
@@ -286,6 +289,7 @@ class RLRecommendationAgent:
             SongRating.song_id == song_id
         ).first()
         if existing_rating:
+            existing_rating.prev_rating = existing_rating.rating
             existing_rating.rating = rating
             existing_rating.mood_at_rating = mood
             existing_rating.arousal = arousal
@@ -316,7 +320,8 @@ class RLRecommendationAgent:
                 liveness=liveness,
                 tempo=tempo,
                 loudness=loudness,
-                context=context
+                context=context,
+                prev_rating=3
             )
             self.db.add(new_rating)
         try:
@@ -325,11 +330,3 @@ class RLRecommendationAgent:
             self.db.rollback()
             logging.exception(f"Failed to save rating for song {song_id}: {str(e)}")
             raise
-
-    def is_low_rated(self, song_id: str, mood: str):
-        rating = self.db.query(SongRating).filter(
-            SongRating.user_id == self.user_id,
-            SongRating.song_id == song_id,
-            SongRating.mood_at_rating == mood
-        ).first()
-        return rating and rating.rating < 3
