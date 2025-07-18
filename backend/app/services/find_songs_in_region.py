@@ -13,7 +13,7 @@ def find_songs_in_region(optimal_point: Tuple[float, float], radius: float = 0.1
     input_file = os.path.join(datasets_dir, 'temp_spotify_dataset_scaled.csv')
 
     # Define output path
-    output_dir = os.path.join(base_dir, '..', 'artifacts', 'plots')
+    output_dir = os.path.join(base_dir, '..', '..', 'plots')
     output_file = os.path.join(output_dir, "arousal_valence_song_region_plot.png")
 
     # Create output directory if it doesn't exist
