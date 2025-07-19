@@ -107,51 +107,61 @@ class RLEvaluation:
         return output_path
     
     def plot_learning_curve(db: Session):
-        # Define output directory
+        # Create output directory
         output_dir = "./charts"
         os.makedirs(output_dir, exist_ok=True)
 
-
+        # Get logs
         logs = db.query(RLTrainingLog).order_by(RLTrainingLog.episode).all()
         if not logs:
             print("No logs found")
             return
 
+        print(f"Total logs: {len(logs)}")
+
+        # Convert logs to DataFrame
         df = pd.DataFrame([{
             'user_id': log.user_id,
             'episode': log.episode,
             'reward': log.reward,
-            'predicted': log.predicted_rating,
             'actual': log.actual_rating
         } for log in logs])
 
-        df['error'] = abs(df['predicted'] - df['actual'])
-        df['accuracy'] = (df['error'] == 0).astype(int)
-        df.sort_values(by='episode', inplace=True)
+        # Fill NaNs
+        df['reward'] = df['reward'].fillna(0)
+        df['actual'] = df['actual'].fillna(-1)
 
-        df['avg_reward'] = df['reward'].rolling(window=10).mean()
-        df['avg_accuracy'] = df['accuracy'].rolling(window=10).mean() * 100
+        # Accuracy calculation
+        total = len(df[df['actual'] != -1])
+        correct = len(df[(df['reward'] == 1) & (df['actual'] != -1)])
+        accuracy = correct / total if total > 0 else 0
 
-        fig, ax1 = plt.subplots()
+        print(f"Total evaluated episodes (with actual): {total}")
+        print(f"Correct predictions (reward=1): {correct}")
+        print(f"Accuracy: {accuracy * 100:.2f}%")
 
-        ax1.set_xlabel('Episode')
-        ax1.set_ylabel('Average Reward', color='tab:blue')
-        ax1.plot(df['episode'], df['avg_reward'], label='Avg Reward', color='tab:blue')
-        ax1.tick_params(axis='y', labelcolor='tab:blue')
+        # Rolling reward average
+        window = min(10, len(df))
+        df['avg_reward'] = df['reward'].rolling(window=window).mean()
 
-        ax2 = ax1.twinx()
-        ax2.set_ylabel('Accuracy (%)', color='tab:green')
-        ax2.plot(df['episode'], df['avg_accuracy'], label='Accuracy', color='tab:green')
-        ax2.tick_params(axis='y', labelcolor='tab:green')
+        # Plot
+        plt.figure(figsize=(10, 6))
+        plt.plot(df['episode'], df['avg_reward'], label='Rolling Avg Reward', color='tab:blue')
+        plt.xlabel('Episode')
+        plt.ylabel('Avg Reward')
+        plt.title(f'RL Learning Curve - Accuracy: {accuracy:.2f}')
+        plt.grid(True)
+        plt.legend()
 
-        plt.title('Overall RL Agent Learning Progress')
-        fig.tight_layout()
-        os.makedirs(output_dir, exist_ok=True)
-        plt.savefig(os.path.join(output_dir, "learning_curve.png"))
+        # Save plot
+        path = os.path.join(output_dir, "learning_curve_reward.png")
+        plt.tight_layout()
+        plt.savefig(path)
         plt.close()
 
-    def evaluate_all_users(db: Session = None) -> Dict:
+        print(f"Plot saved to: {path}")
 
+    def evaluate_all_users(db: Session = None) -> Dict:
         # Define output directory
         output_dir = "./charts"
         os.makedirs(output_dir, exist_ok=True)
