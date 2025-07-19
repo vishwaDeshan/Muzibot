@@ -106,23 +106,29 @@ class RLEvaluation:
         logging.info(f"Chart saved to {output_path}")
         return output_path
     
-    def plot_learning_curve(db: Session, user_id: int):
-        logs = db.query(RLTrainingLog).filter(RLTrainingLog.user_id == user_id).order_by(RLTrainingLog.episode).all()
+    def plot_learning_curve(db: Session):
+        # Define output directory
+        output_dir = "./charts"
+        os.makedirs(output_dir, exist_ok=True)
+
+
+        logs = db.query(RLTrainingLog).order_by(RLTrainingLog.episode).all()
         if not logs:
             print("No logs found")
             return
-        
+
         df = pd.DataFrame([{
+            'user_id': log.user_id,
             'episode': log.episode,
             'reward': log.reward,
             'predicted': log.predicted_rating,
             'actual': log.actual_rating
         } for log in logs])
-        
+
         df['error'] = abs(df['predicted'] - df['actual'])
         df['accuracy'] = (df['error'] == 0).astype(int)
+        df.sort_values(by='episode', inplace=True)
 
-        # Rolling averages for smoothing
         df['avg_reward'] = df['reward'].rolling(window=10).mean()
         df['avg_accuracy'] = df['accuracy'].rolling(window=10).mean() * 100
 
@@ -133,25 +139,16 @@ class RLEvaluation:
         ax1.plot(df['episode'], df['avg_reward'], label='Avg Reward', color='tab:blue')
         ax1.tick_params(axis='y', labelcolor='tab:blue')
 
-        ax2 = ax1.twinx()  # second axis for accuracy
+        ax2 = ax1.twinx()
         ax2.set_ylabel('Accuracy (%)', color='tab:green')
         ax2.plot(df['episode'], df['avg_accuracy'], label='Accuracy', color='tab:green')
         ax2.tick_params(axis='y', labelcolor='tab:green')
 
-        plt.title('RL Agent Learning Progress')
+        plt.title('Overall RL Agent Learning Progress')
         fig.tight_layout()
-        plt.show()
-
-    def plot_q_table_slice(q_table, mood_idx, rating_idx, arousal_idx, valence_idx):
-        slice = q_table[mood_idx, rating_idx, arousal_idx, valence_idx, :, :, :]
-        avg_q = np.mean(slice, axis=2)  # average over last weight axis
-
-        plt.imshow(avg_q, cmap='viridis')
-        plt.colorbar(label='Q-value')
-        plt.title("Q-table Slice")
-        plt.xlabel("Current Mood Weight Index")
-        plt.ylabel("Similar User Prefs Weight Index")
-        plt.show()
+        os.makedirs(output_dir, exist_ok=True)
+        plt.savefig(os.path.join(output_dir, "learning_curve.png"))
+        plt.close()
 
     def evaluate_all_users(db: Session = None) -> Dict:
 
