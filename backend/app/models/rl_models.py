@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy import Column, Integer, Float, String, ForeignKey, DateTime, CheckConstraint, UniqueConstraint # type: ignore
 from sqlalchemy.sql import func # type: ignore
 from sqlalchemy.orm import relationship # type: ignore
@@ -77,3 +78,14 @@ class SongRating(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     user = relationship("User", back_populates="song_ratings")
+
+class RLTrainingLog(Base):
+    __tablename__ = 'rl_training_logs'
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True)
+    song_id = Column(String, index=True)
+    mood = Column(String)
+    reward = Column(Float)
+    actual_rating = Column(Integer)
+    episode = Column(Integer)
+    created_at = Column(DateTime, server_default=func.now())

@@ -3,6 +3,10 @@ from sqlalchemy.orm import Session # type: ignore
 from sqlalchemy import func # type: ignore
 from app.models.rl_models import RLQTable, RLWeights, SongRating
 from sqlalchemy.exc import SQLAlchemyError # type: ignore
+from app.models.rl_models import RLTrainingLog
+import matplotlib.pyplot as plt
+import pandas as pd
+from sqlalchemy.orm import Session
 from datetime import datetime
 import logging
 
@@ -268,9 +272,11 @@ class RLRecommendationAgent:
             raise
 
     def train(self, song_id: str, mood: str, prev_rating: int, new_rating: int, next_mood: str):
-        song = self.db.query(SongRating).filter(SongRating.song_id == song_id).first()
-        arousal = song.arousal if song and song.arousal is not None else 0.5
-        valence = song.valence if song and song.valence is not None else 0.5
+        song = self.db.query(SongRating).filter(SongRating.song_id == song_id,
+                                                SongRating.user_id == self.user_id
+        ).first()
+        arousal = song.arousal
+        valence = song.valence
         q_table, arousal_idx, valence_idx, exact_arousal, exact_valence = self._load_q_table_for_song(song_id)
         mood_idx, rating_idx, arousal_idx, valence_idx = self._get_state_index(mood, prev_rating, arousal, valence)
         next_mood_idx, next_rating_idx, next_arousal_idx, next_valence_idx = self._get_state_index(next_mood, new_rating, arousal, valence)
@@ -281,9 +287,21 @@ class RLRecommendationAgent:
                              reward, next_mood_idx, next_rating_idx, next_arousal_idx, next_valence_idx)
         self._save_q_table_for_song(song_id, q_table, arousal_idx, valence_idx, exact_arousal, exact_valence)
 
+        # Log training progress (optional: add episode counter externally or internally)
+        self.log_training_progress(
+            song_id=song_id,
+            mood=mood,
+            reward=reward,
+            actual_rating=new_rating,
+            episode=self.training_episode_count if hasattr(self, "training_episode_count") else 0
+        )
+
     def save_rating(self, song_id: str, rating: int, mood: str, arousal: float, valence: float,
                     danceability: float, energy: float, acousticness: float, instrumentalness: float, speechiness: float, 
                     liveness: float, tempo: float, loudness: float, context: str = None):
+        
+        PREV_RATING = 3 # default previous rating for a song
+
         existing_rating = self.db.query(SongRating).filter(
             SongRating.user_id == self.user_id,
             SongRating.song_id == song_id
@@ -321,7 +339,7 @@ class RLRecommendationAgent:
                 tempo=tempo,
                 loudness=loudness,
                 context=context,
-                prev_rating=3
+                prev_rating=PREV_RATING
             )
             self.db.add(new_rating)
         try:
@@ -330,3 +348,67 @@ class RLRecommendationAgent:
             self.db.rollback()
             logging.exception(f"Failed to save rating for song {song_id}: {str(e)}")
             raise
+
+    # validate RL model over time
+    def log_training_progress(self, song_id, mood, reward, actual_rating, episode):
+        log_entry = RLTrainingLog(
+            user_id=self.user_id,
+            song_id=song_id,
+            mood=mood,
+            reward=reward,
+            actual_rating=actual_rating,
+            episode=episode
+        )
+        self.db.add(log_entry)
+        try:
+            self.db.commit()
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logging.error(f"Failed to save RL training log: {str(e)}")
+
+    def plot_learning_curve(db: Session, user_id: int):
+        logs = db.query(RLTrainingLog).filter(RLTrainingLog.user_id == user_id).order_by(RLTrainingLog.episode).all()
+        if not logs:
+            print("No logs found")
+            return
+        
+        df = pd.DataFrame([{
+            'episode': log.episode,
+            'reward': log.reward,
+            'predicted': log.predicted_rating,
+            'actual': log.actual_rating
+        } for log in logs])
+        
+        df['error'] = abs(df['predicted'] - df['actual'])
+        df['accuracy'] = (df['error'] == 0).astype(int)
+
+        # Rolling averages for smoothing
+        df['avg_reward'] = df['reward'].rolling(window=10).mean()
+        df['avg_accuracy'] = df['accuracy'].rolling(window=10).mean() * 100
+
+        fig, ax1 = plt.subplots()
+
+        ax1.set_xlabel('Episode')
+        ax1.set_ylabel('Average Reward', color='tab:blue')
+        ax1.plot(df['episode'], df['avg_reward'], label='Avg Reward', color='tab:blue')
+        ax1.tick_params(axis='y', labelcolor='tab:blue')
+
+        ax2 = ax1.twinx()  # second axis for accuracy
+        ax2.set_ylabel('Accuracy (%)', color='tab:green')
+        ax2.plot(df['episode'], df['avg_accuracy'], label='Accuracy', color='tab:green')
+        ax2.tick_params(axis='y', labelcolor='tab:green')
+
+        plt.title('RL Agent Learning Progress')
+        fig.tight_layout()
+        plt.show()
+
+    def plot_q_table_slice(q_table, mood_idx, rating_idx, arousal_idx, valence_idx):
+        slice = q_table[mood_idx, rating_idx, arousal_idx, valence_idx, :, :, :]
+        avg_q = np.mean(slice, axis=2)  # average over last weight axis
+
+        plt.imshow(avg_q, cmap='viridis')
+        plt.colorbar(label='Q-value')
+        plt.title("Q-table Slice")
+        plt.xlabel("Current Mood Weight Index")
+        plt.ylabel("Similar User Prefs Weight Index")
+        plt.show()
