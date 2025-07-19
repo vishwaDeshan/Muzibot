@@ -107,12 +107,14 @@ class RLEvaluation:
         return output_path
     
     def plot_learning_curve(db: Session):
-        # Define output directory
         output_dir = "./charts"
         os.makedirs(output_dir, exist_ok=True)
 
+        logs = db.query(RLTrainingLog)\
+                .filter(RLTrainingLog.predicted_rating != None)\
+                .order_by(RLTrainingLog.episode)\
+                .all()
 
-        logs = db.query(RLTrainingLog).order_by(RLTrainingLog.episode).all()
         if not logs:
             print("No logs found")
             return
@@ -129,8 +131,9 @@ class RLEvaluation:
         df['accuracy'] = (df['error'] == 0).astype(int)
         df.sort_values(by='episode', inplace=True)
 
-        df['avg_reward'] = df['reward'].rolling(window=10).mean()
-        df['avg_accuracy'] = df['accuracy'].rolling(window=10).mean() * 100
+        window = min(10, len(df))
+        df['avg_reward'] = df['reward'].rolling(window=window).mean()
+        df['avg_accuracy'] = df['accuracy'].rolling(window=window).mean() * 100
 
         fig, ax1 = plt.subplots()
 
@@ -138,20 +141,20 @@ class RLEvaluation:
         ax1.set_ylabel('Average Reward', color='tab:blue')
         ax1.plot(df['episode'], df['avg_reward'], label='Avg Reward', color='tab:blue')
         ax1.tick_params(axis='y', labelcolor='tab:blue')
+        ax1.legend(loc='upper left')
 
         ax2 = ax1.twinx()
         ax2.set_ylabel('Accuracy (%)', color='tab:green')
         ax2.plot(df['episode'], df['avg_accuracy'], label='Accuracy', color='tab:green')
         ax2.tick_params(axis='y', labelcolor='tab:green')
+        ax2.legend(loc='upper right')
 
         plt.title('Overall RL Agent Learning Progress')
         fig.tight_layout()
-        os.makedirs(output_dir, exist_ok=True)
         plt.savefig(os.path.join(output_dir, "learning_curve.png"))
         plt.close()
 
     def evaluate_all_users(db: Session = None) -> Dict:
-
         # Define output directory
         output_dir = "./charts"
         os.makedirs(output_dir, exist_ok=True)

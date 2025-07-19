@@ -286,12 +286,19 @@ class RLRecommendationAgent:
         self._save_q_table_for_song(song_id, q_table, arousal_idx, valence_idx, exact_arousal, exact_valence)
 
         # Log training progress (optional: add episode counter externally or internally)
+        
+        # Get episode number from DB
+        last_episode = self.db.query(func.max(RLTrainingLog.episode))\
+                            .filter(RLTrainingLog.user_id == self.user_id)\
+                            .scalar()
+        episode = (last_episode or 0) + 1
+
         self.log_training_progress(
             song_id=song_id,
             mood=mood,
             reward=reward,
             actual_rating=new_rating,
-            episode=self.training_episode_count if hasattr(self, "training_episode_count") else 0
+            episode=episode
         )
 
     def save_rating(self, song_id: str, rating: int, mood: str, arousal: float, valence: float,
