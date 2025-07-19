@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session # type: ignore
 from sqlalchemy import func # type: ignore
 from app.models.rl_models import RLQTable, RLWeights, SongRating
 from sqlalchemy.exc import SQLAlchemyError # type: ignore
+from app.models.rl_models import RLTrainingLog
+from sqlalchemy.orm import Session
 from datetime import datetime
 import logging
 
@@ -18,10 +20,11 @@ class RLRecommendationAgent:
         self.valence_bins = np.linspace(0, 1, 5)  # Discretize valence (0 to 1)
         
         # Learning parameters
-        self.learning_rate = 0.1
-        self.discount_factor = 0.9
-        self.epsilon = 0.1
-        self.similarity_penalty = 0.05
+        self.learning_rate = 0.1         # How much new info overrides old (Q-learning update strength)
+        self.discount_factor = 0.9       # Importance of future rewards vs. immediate rewards
+        self.epsilon = 0.1               # Probability of exploring (vs. exploiting best known action)
+        self.similarity_penalty = 0.05   # Penalty applied for too much similarity in song/user preferences
+
 
     def _init_q_table(self):
         return np.zeros((len(self.moods), len(self.ratings), len(self.arousal_bins), len(self.valence_bins),
@@ -29,7 +32,9 @@ class RLRecommendationAgent:
 
     def _load_q_table_for_song(self, song_id: str):
         q_table = self._init_q_table()
-        song = self.db.query(SongRating).filter(SongRating.song_id == song_id).first()
+        song = self.db.query(SongRating).filter(SongRating.song_id == song_id,
+                                                SongRating.user_id == self.user_id
+        ).first()
         if not song or song.arousal is None or song.valence is None:
             arousal_idx = 0
             valence_idx = 0
@@ -177,7 +182,7 @@ class RLRecommendationAgent:
             'desired_mood_after_listening': self.weight_values[w_desired_idx]
         }
 
-    def get_generalized_weights(self, mood: str, prev_rating: int = None):
+    def get_generalized_weights(self, mood: str):
         weights_entry = self.db.query(RLWeights).filter(
             RLWeights.user_id == self.user_id,
             RLWeights.mood == mood
@@ -213,7 +218,7 @@ class RLRecommendationAgent:
         count = 0
         for song in rated_songs:
             try:
-                song_weights = self.get_optimized_weights(song.song_id, mood, prev_rating)
+                song_weights = self.get_optimized_weights(song.song_id, mood, song.prev_rating)
                 for key in total_weights:
                     total_weights[key] += song_weights[key]
                 count += 1
@@ -265,9 +270,11 @@ class RLRecommendationAgent:
             raise
 
     def train(self, song_id: str, mood: str, prev_rating: int, new_rating: int, next_mood: str):
-        song = self.db.query(SongRating).filter(SongRating.song_id == song_id).first()
-        arousal = song.arousal if song and song.arousal is not None else 0.5
-        valence = song.valence if song and song.valence is not None else 0.5
+        song = self.db.query(SongRating).filter(SongRating.song_id == song_id,
+                                                SongRating.user_id == self.user_id
+        ).first()
+        arousal = song.arousal
+        valence = song.valence
         q_table, arousal_idx, valence_idx, exact_arousal, exact_valence = self._load_q_table_for_song(song_id)
         mood_idx, rating_idx, arousal_idx, valence_idx = self._get_state_index(mood, prev_rating, arousal, valence)
         next_mood_idx, next_rating_idx, next_arousal_idx, next_valence_idx = self._get_state_index(next_mood, new_rating, arousal, valence)
@@ -278,14 +285,27 @@ class RLRecommendationAgent:
                              reward, next_mood_idx, next_rating_idx, next_arousal_idx, next_valence_idx)
         self._save_q_table_for_song(song_id, q_table, arousal_idx, valence_idx, exact_arousal, exact_valence)
 
+        # Log training progress (optional: add episode counter externally or internally)
+        self.log_training_progress(
+            song_id=song_id,
+            mood=mood,
+            reward=reward,
+            actual_rating=new_rating,
+            episode=self.training_episode_count if hasattr(self, "training_episode_count") else 0
+        )
+
     def save_rating(self, song_id: str, rating: int, mood: str, arousal: float, valence: float,
                     danceability: float, energy: float, acousticness: float, instrumentalness: float, speechiness: float, 
                     liveness: float, tempo: float, loudness: float, context: str = None):
+        
+        PREV_RATING = 3 # default previous rating for a song
+
         existing_rating = self.db.query(SongRating).filter(
             SongRating.user_id == self.user_id,
             SongRating.song_id == song_id
         ).first()
         if existing_rating:
+            existing_rating.prev_rating = existing_rating.rating
             existing_rating.rating = rating
             existing_rating.mood_at_rating = mood
             existing_rating.arousal = arousal
@@ -316,7 +336,8 @@ class RLRecommendationAgent:
                 liveness=liveness,
                 tempo=tempo,
                 loudness=loudness,
-                context=context
+                context=context,
+                prev_rating=PREV_RATING
             )
             self.db.add(new_rating)
         try:
@@ -326,10 +347,20 @@ class RLRecommendationAgent:
             logging.exception(f"Failed to save rating for song {song_id}: {str(e)}")
             raise
 
-    def is_low_rated(self, song_id: str, mood: str):
-        rating = self.db.query(SongRating).filter(
-            SongRating.user_id == self.user_id,
-            SongRating.song_id == song_id,
-            SongRating.mood_at_rating == mood
-        ).first()
-        return rating and rating.rating < 3
+    # validate RL model over time
+    def log_training_progress(self, song_id, mood, reward, actual_rating, episode):
+        log_entry = RLTrainingLog(
+            user_id=self.user_id,
+            song_id=song_id,
+            mood=mood,
+            reward=reward,
+            actual_rating=actual_rating,
+            episode=episode
+        )
+        self.db.add(log_entry)
+        try:
+            self.db.commit()
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logging.error(f"Failed to save RL training log: {str(e)}")
+

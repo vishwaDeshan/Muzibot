@@ -9,7 +9,7 @@ from app.services.optimal_point_calculator import calculate_optimal_point
 from app.services.find_songs_in_region import find_songs_in_region
 from app.services.content_based_recommender import get_best_match_songs
 from app.services.rl_service import RLRecommendationAgent
-from app.services.rL_evaluation import evaluate_all_users
+from app.services.rL_evaluation import RLEvaluation
 import logging
 
 router = APIRouter()
@@ -30,7 +30,6 @@ class RecommendationInput(BaseModel):
     fav_music_genres: List[str]
     desired_mood: str
     current_mood: str
-    previous_rating: Optional[int] = None
 
 class SongRatingInput(BaseModel):
     user_id: int
@@ -146,10 +145,7 @@ async def recommend_songs(input_data: RecommendationInput, db: Session = Depends
 
         # 3. Get generalized RL weights
         try:
-            rl_weights = rl_agent.get_generalized_weights(
-                mood=input_data.current_mood,
-                prev_rating=input_data.previous_rating or 3
-            )
+            rl_weights = rl_agent.get_generalized_weights(mood=input_data.current_mood)
         except Exception as e:
             logging.error(f"Failed to get generalized weights: {str(e)}")
             raise HTTPException(status_code=500, detail="Failed to compute generalized weights")
@@ -235,13 +231,21 @@ async def find_similar_users_route(input_data: UserInput, db: Session = Depends(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
 
-@router.post("/evaluate-rl-accuracy")
+@router.post("/evaluate/rl-accuracy")
 async def test_rl_accuracy_all(db: Session = Depends(get_db)):
     try:
-        result = evaluate_all_users(db)
+        result = RLEvaluation.evaluate_all_users(db)
         if "error" in result:
             raise HTTPException(status_code=500, detail=result["error"])
         return result
     except Exception as e:
         logging.error(f"Unexpected error in test_rl_accuracy_all: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error during RL accuracy test for all users")
+    
+@router.post("/evaluate/learning-curve")
+async def evaluate_learning_curve(db: Session = Depends(get_db)):
+    try:
+        RLEvaluation.plot_learning_curve(db)
+        return {"message": "Learning curve plotted and saved as 'learning_curve.png'"}
+    except Exception as e:
+        return {"error": str(e)}
