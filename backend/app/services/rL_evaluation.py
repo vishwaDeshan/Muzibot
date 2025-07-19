@@ -2,11 +2,13 @@ import sys
 import os
 import logging
 import matplotlib.pyplot as plt # type: ignore
+import numpy as np
+import pandas as pd
 from tabulate import tabulate # type: ignore
 from typing import Dict, List, Tuple
 from sqlalchemy.orm import Session # type: ignore
 from sqlalchemy.exc import SQLAlchemyError # type: ignore
-from app.models.rl_models import SongRating
+from app.models.rl_models import RLTrainingLog, SongRating
 from app.services.rl_service import RLRecommendationAgent
 from app.database import get_db
 
@@ -103,74 +105,121 @@ class RLEvaluation:
 
         logging.info(f"Chart saved to {output_path}")
         return output_path
+    
+    def plot_learning_curve(db: Session, user_id: int):
+        logs = db.query(RLTrainingLog).filter(RLTrainingLog.user_id == user_id).order_by(RLTrainingLog.episode).all()
+        if not logs:
+            print("No logs found")
+            return
+        
+        df = pd.DataFrame([{
+            'episode': log.episode,
+            'reward': log.reward,
+            'predicted': log.predicted_rating,
+            'actual': log.actual_rating
+        } for log in logs])
+        
+        df['error'] = abs(df['predicted'] - df['actual'])
+        df['accuracy'] = (df['error'] == 0).astype(int)
 
-def evaluate_all_users(db: Session = None) -> Dict:
+        # Rolling averages for smoothing
+        df['avg_reward'] = df['reward'].rolling(window=10).mean()
+        df['avg_accuracy'] = df['accuracy'].rolling(window=10).mean() * 100
 
-    # Define output directory
-    output_dir = "./charts"
-    os.makedirs(output_dir, exist_ok=True)
+        fig, ax1 = plt.subplots()
 
-    if db is None:
-        db = next(get_db())
+        ax1.set_xlabel('Episode')
+        ax1.set_ylabel('Average Reward', color='tab:blue')
+        ax1.plot(df['episode'], df['avg_reward'], label='Avg Reward', color='tab:blue')
+        ax1.tick_params(axis='y', labelcolor='tab:blue')
 
-    try:
-        user_ids = db.query(SongRating.user_id).distinct().all()
-        user_ids = [uid[0] for uid in user_ids]
-    except Exception as e:
-        logging.error(f"Failed to fetch user IDs: {str(e)}")
-        return {"error": f"Failed to fetch user IDs: {str(e)}"}
+        ax2 = ax1.twinx()  # second axis for accuracy
+        ax2.set_ylabel('Accuracy (%)', color='tab:green')
+        ax2.plot(df['episode'], df['avg_accuracy'], label='Accuracy', color='tab:green')
+        ax2.tick_params(axis='y', labelcolor='tab:green')
 
-    if not user_ids:
-        logging.warning("No users found in the SongRating table.")
-        return {"error": "No users found in the SongRating table."}
+        plt.title('RL Agent Learning Progress')
+        fig.tight_layout()
+        plt.show()
 
-    try:
-        agent = RLRecommendationAgent(db=db, user_id=user_ids[0])
-        mood_data = {mood: [] for mood in agent.moods}
+    def plot_q_table_slice(q_table, mood_idx, rating_idx, arousal_idx, valence_idx):
+        slice = q_table[mood_idx, rating_idx, arousal_idx, valence_idx, :, :, :]
+        avg_q = np.mean(slice, axis=2)  # average over last weight axis
 
-        for user_id in user_ids:
-            evaluator = RLEvaluation(agent=RLRecommendationAgent(db=db, user_id=user_id))
-            test_data = evaluator.prepare_test_data(user_id=user_id)
-            for data in test_data:
-                mood = data[1]
-                if mood in mood_data:
-                    mood_data[mood].append(data)
+        plt.imshow(avg_q, cmap='viridis')
+        plt.colorbar(label='Q-value')
+        plt.title("Q-table Slice")
+        plt.xlabel("Current Mood Weight Index")
+        plt.ylabel("Similar User Prefs Weight Index")
+        plt.show()
 
-        evaluator = RLEvaluation(agent=agent)
-        results = {}
-        overall_correct = 0
-        overall_total = 0
+    def evaluate_all_users(db: Session = None) -> Dict:
 
-        for mood in agent.moods:
-            if mood_data[mood]:
-                accuracy = evaluator.evaluate_rating_accuracy(mood_data[mood])
-                results[mood] = accuracy
-                correct = int(accuracy * len(mood_data[mood]))
-                overall_correct += correct
-                overall_total += len(mood_data[mood])
-            else:
-                results[mood] = 0.0
+        # Define output directory
+        output_dir = "./charts"
+        os.makedirs(output_dir, exist_ok=True)
 
-        results['Overall'] = overall_correct / overall_total if overall_total > 0 else 0.0
-        chart_path = evaluator._visualize_accuracy(
-            results,
-            chart_title="Rating Prediction Accuracy by All Users",
-            output_path=os.path.join(output_dir, "accuracy_rl_model.png")
-        )
+        if db is None:
+            db = next(get_db())
 
-        # Generate accuracy table
-        table_data = [(mood, f"{acc:.2%}") for mood, acc in results.items()]
-        table_str = tabulate(table_data, headers=["Mood", "Accuracy"], tablefmt="grid")
+        try:
+            user_ids = db.query(SongRating.user_id).distinct().all()
+            user_ids = [uid[0] for uid in user_ids]
+        except Exception as e:
+            logging.error(f"Failed to fetch user IDs: {str(e)}")
+            return {"error": f"Failed to fetch user IDs: {str(e)}"}
 
-        print("\n" + table_str)  # Optional: print to console
+        if not user_ids:
+            logging.warning("No users found in the SongRating table.")
+            return {"error": "No users found in the SongRating table."}
 
-        db.close()
+        try:
+            agent = RLRecommendationAgent(db=db, user_id=user_ids[0])
+            mood_data = {mood: [] for mood in agent.moods}
 
-        return {
-            "accuracy_by_mood": {mood: f"{acc:.2%}" for mood, acc in results.items()},
-        }
+            for user_id in user_ids:
+                evaluator = RLEvaluation(agent=RLRecommendationAgent(db=db, user_id=user_id))
+                test_data = evaluator.prepare_test_data(user_id=user_id)
+                for data in test_data:
+                    mood = data[1]
+                    if mood in mood_data:
+                        mood_data[mood].append(data)
 
-    except Exception as e:
-        logging.error(f"Unexpected error in evaluate_all_users: {str(e)}")
-        db.close()
-        return {"error": f"Internal server error: {str(e)}"}
+            evaluator = RLEvaluation(agent=agent)
+            results = {}
+            overall_correct = 0
+            overall_total = 0
+
+            for mood in agent.moods:
+                if mood_data[mood]:
+                    accuracy = evaluator.evaluate_rating_accuracy(mood_data[mood])
+                    results[mood] = accuracy
+                    correct = int(accuracy * len(mood_data[mood]))
+                    overall_correct += correct
+                    overall_total += len(mood_data[mood])
+                else:
+                    results[mood] = 0.0
+
+            results['Overall'] = overall_correct / overall_total if overall_total > 0 else 0.0
+            chart_path = evaluator._visualize_accuracy(
+                results,
+                chart_title="Rating Prediction Accuracy by All Users",
+                output_path=os.path.join(output_dir, "accuracy_rl_model.png")
+            )
+
+            # Generate accuracy table
+            table_data = [(mood, f"{acc:.2%}") for mood, acc in results.items()]
+            table_str = tabulate(table_data, headers=["Mood", "Accuracy"], tablefmt="grid")
+
+            print("\n" + table_str)  # Optional: print to console
+
+            db.close()
+
+            return {
+                "accuracy_by_mood": {mood: f"{acc:.2%}" for mood, acc in results.items()},
+            }
+
+        except Exception as e:
+            logging.error(f"Unexpected error in evaluate_all_users: {str(e)}")
+            db.close()
+            return {"error": f"Internal server error: {str(e)}"}

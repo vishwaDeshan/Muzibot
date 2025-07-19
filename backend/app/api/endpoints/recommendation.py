@@ -9,7 +9,7 @@ from app.services.optimal_point_calculator import calculate_optimal_point
 from app.services.find_songs_in_region import find_songs_in_region
 from app.services.content_based_recommender import get_best_match_songs
 from app.services.rl_service import RLRecommendationAgent
-from app.services.rL_evaluation import evaluate_all_users
+from app.services.rL_evaluation import RLEvaluation
 import logging
 
 router = APIRouter()
@@ -234,7 +234,7 @@ async def find_similar_users_route(input_data: UserInput, db: Session = Depends(
 @router.post("/evaluate-rl-accuracy")
 async def test_rl_accuracy_all(db: Session = Depends(get_db)):
     try:
-        result = evaluate_all_users(db)
+        result = RLEvaluation.evaluate_all_users(db)
         if "error" in result:
             raise HTTPException(status_code=500, detail=result["error"])
         return result
