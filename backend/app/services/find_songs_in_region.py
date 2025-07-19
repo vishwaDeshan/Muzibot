@@ -10,7 +10,7 @@ def find_songs_in_region(optimal_point: Tuple[float, float], radius: float = 0.1
     # Define input and output paths
     base_dir = os.path.dirname(os.path.abspath(__file__))
     datasets_dir = os.path.join(base_dir, '..', 'datasets')
-    input_file = os.path.join(datasets_dir, 'temp_spotify_dataset_scaled.csv')
+    input_file = os.path.join(datasets_dir, 'spotify_full_with_predictions.csv')
 
     # Define output path
     output_dir = os.path.join(base_dir, '..', '..', 'plots')
