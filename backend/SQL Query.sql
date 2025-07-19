@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS song_ratings CASCADE;
 DROP TABLE IF EXISTS rl_weights CASCADE;
 DROP TABLE IF EXISTS rl_q_table CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS rl_training_logs CASCADE;
 
 -- Create the users table
 CREATE TABLE users (
