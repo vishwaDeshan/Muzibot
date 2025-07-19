@@ -107,50 +107,42 @@ class RLEvaluation:
         return output_path
     
     def plot_learning_curve(db: Session):
+        # Create output directory
         output_dir = "./charts"
         os.makedirs(output_dir, exist_ok=True)
 
-        logs = db.query(RLTrainingLog)\
-                .filter(RLTrainingLog.predicted_rating != None)\
-                .order_by(RLTrainingLog.episode)\
-                .all()
-
+        # Get logs sorted by episode
+        logs = db.query(RLTrainingLog).order_by(RLTrainingLog.episode).all()
         if not logs:
             print("No logs found")
             return
 
+        # Convert logs to DataFrame
         df = pd.DataFrame([{
             'user_id': log.user_id,
             'episode': log.episode,
             'reward': log.reward,
-            'predicted': log.predicted_rating,
             'actual': log.actual_rating
         } for log in logs])
 
-        df['error'] = abs(df['predicted'] - df['actual'])
-        df['accuracy'] = (df['error'] == 0).astype(int)
+        # Sort by episode
         df.sort_values(by='episode', inplace=True)
 
+        # Compute rolling average reward
         window = min(10, len(df))
         df['avg_reward'] = df['reward'].rolling(window=window).mean()
-        df['avg_accuracy'] = df['accuracy'].rolling(window=window).mean() * 100
 
-        fig, ax1 = plt.subplots()
+        # Plotting
+        plt.figure(figsize=(10, 6))
+        plt.plot(df['episode'], df['avg_reward'], label='Avg Reward (Rolling)', color='tab:blue')
+        plt.xlabel('Episode')
+        plt.ylabel('Average Reward')
+        plt.title('RL Agent Learning Progress (Reward Only)')
+        plt.legend()
+        plt.grid(True)
 
-        ax1.set_xlabel('Episode')
-        ax1.set_ylabel('Average Reward', color='tab:blue')
-        ax1.plot(df['episode'], df['avg_reward'], label='Avg Reward', color='tab:blue')
-        ax1.tick_params(axis='y', labelcolor='tab:blue')
-        ax1.legend(loc='upper left')
-
-        ax2 = ax1.twinx()
-        ax2.set_ylabel('Accuracy (%)', color='tab:green')
-        ax2.plot(df['episode'], df['avg_accuracy'], label='Accuracy', color='tab:green')
-        ax2.tick_params(axis='y', labelcolor='tab:green')
-        ax2.legend(loc='upper right')
-
-        plt.title('Overall RL Agent Learning Progress')
-        fig.tight_layout()
+        # Save plot
+        plt.tight_layout()
         plt.savefig(os.path.join(output_dir, "learning_curve.png"))
         plt.close()
 
