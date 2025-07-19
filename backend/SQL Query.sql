@@ -83,11 +83,27 @@ CREATE TABLE song_ratings (
     CONSTRAINT check_rating CHECK (rating >= 1 AND rating <= 5)
 );
 
+CREATE TABLE rl_training_logs (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER,
+    song_id VARCHAR,
+    mood VARCHAR,
+    reward FLOAT,
+    actual_rating INTEGER,
+    episode INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create an index on updated_at for rl_q_table (optional, for performance)
 CREATE INDEX rl_q_table_updated_at_idx ON rl_q_table (updated_at);
 
 -- Recreate index
 CREATE INDEX rl_weights_updated_at_idx ON rl_weights (updated_at);
+
+CREATE INDEX idx_user_id ON rl_training_logs(user_id);
+
+CREATE INDEX idx_song_id ON rl_training_logs(song_id);
+
 
 INSERT INTO users (username, email, desired_mood, favourite_music_genres)
 VALUES ('vishwa98', 'vishwa@gmail.com', 'Calm', '["Pop", "Classical"]');
@@ -96,3 +112,4 @@ SELECT * FROM users
 SELECT * FROM rl_q_table
 SELECT * FROM rl_weights
 SELECT * FROM song_ratings
+SELECT * FROM rl_training_logs
