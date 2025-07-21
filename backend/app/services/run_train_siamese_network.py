@@ -8,6 +8,7 @@ from tensorflow.keras.models import Model # type: ignore
 from tensorflow.keras.layers import Input, Dense, Lambda, Dropout # type: ignore
 from tensorflow.keras import backend as K # type: ignore
 import matplotlib.pyplot as plt # type: ignore
+from scipy.spatial.distance import cdist
 import pickle
 import os
 
@@ -184,3 +185,20 @@ print("Saved encoder")
 with open(os.path.join(output_dir, 'mlb.pkl'), 'wb') as f:
     pickle.dump(mlb, f)
 print("Saved MultiLabelBinarizer")
+
+# Load user embeddings
+embeddings = np.load(os.path.join(output_dir, 'user_embeddings.npy'))
+print("Loaded embeddings shape:", embeddings.shape)
+
+# Compute Euclidean distances
+distance_matrix = cdist(embeddings, embeddings, metric='euclidean')
+
+# Create heatmap
+plt.figure(figsize=(10, 8))
+plt.imshow(distance_matrix, cmap='YlGnBu_r', interpolation='nearest')
+plt.colorbar(label='Euclidean Distance')
+plt.xlabel('User Index')
+plt.ylabel('User Index')
+plt.title('Euclidean Distances Between User Embeddings')
+plt.savefig(os.path.join(output_dir, 'euclidean_distance_heatmap.png'))
+plt.close()
