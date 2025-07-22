@@ -31,3 +31,6 @@ yarn-error.log
 
 # Ignore local environment files
 .env
+
+# Ignore worked vesrion ofdependecies
+backend/updatedRequirements.txt

@@ -1,0 +1,97 @@
+Age,Sex,Profession,Type of music you like to listen?
+0.2222222222222222,Male,Engineer ,"['Hip-Hop', '']"
+0.16666666666666663,Female,Nurse,['Classic']
+0.2407407407407407,Male,Teacher,['Classic']
+0.16666666666666663,Female,Student,['Classic']
+0.2222222222222222,Male,Engineer,"['Classic', 'Hip-Hop']"
+0.16666666666666663,Female,Nurse,['Classic']
+0.18518518518518517,Male,Applications Engineer,"['Classic', 'Rock', 'Pop']"
+0.14814814814814814,Male,Student ,"['Classic', 'Hip-Hop']"
+0.2222222222222222,Male,Engineer,"['Classic', 'Rock', 'Hip-Hop', 'Pop', 'Folk']"
+0.14814814814814814,Male,Student,['Classic']
+0.16666666666666663,Female,Banker,['Classic']
+0.14814814814814814,Male,Singer,['Electronic Dance Music (EDM)']
+0.14814814814814814,Female,Nursing student,"['Classic', 'Rock', 'Hip-Hop', 'Pop']"
+0.18518518518518517,Male,IT Professional ,"['Classic', 'Hip-Hop']"
+0.09259259259259256,Female,Student ,['Classic']
+0.12962962962962965,Female,Student,['Classic']
+0.2592592592592593,Male,IT Professional ,['Classic']
+0.14814814814814814,Female,Student,['Classic']
+0.09259259259259256,Female,Student,"['Classic', '']"
+0.09259259259259256,Female,Student,['Pop']
+0.12962962962962965,Male,Engineer,['Classic']
+0.07407407407407407,Male,Student ,['Classic']
+0.09259259259259256,Female,Student ,['Classic']
+0.0,Male,Student ,"['Classic', 'Metal']"
+0.09259259259259256,Female,Student ,['Classic']
+0.09259259259259256,Female,Student ,"['Classic', 'Pop']"
+0.2777777777777778,Female,Teacher ,['Classic']
+0.09259259259259256,Female,Student ,['Classic']
+0.16666666666666663,Female,Engineering support coordinator ,"['Classic', 'Hip-Hop', 'Pop']"
+0.14814814814814814,Male,Student ,"['Classic', 'Rock', 'Pop', 'Electronic Dance Music (EDM)']"
+0.2222222222222222,Male,Engineering,['Classic']
+0.2222222222222222,Female,Teacher ,['Classic']
+0.2222222222222222,Male,IT Professional ,"['Classic', 'Hip-Hop', 'Jazz']"
+0.2407407407407407,Male,Electrical Engineer ,"['Classic', 'Electronic Dance Music (EDM)']"
+0.1111111111111111,Male,Student,"['Classic', 'Folk', '']"
+0.2407407407407407,Male,Engineer ,"['Classic', 'Rock', 'Hip-Hop']"
+0.14814814814814814,Male,Student ,['Electronic Dance Music (EDM)']
+0.12962962962962965,Female,Nurse,['Classic']
+0.2592592592592593,Male,Mechanical Engineer,"['Classic', 'Rock', 'Hip-Hop', 'Pop']"
+0.2407407407407407,Male,Engineer,"['Classic', 'Pop', 'Electronic Dance Music (EDM)', 'Jazz']"
+0.2592592592592593,Male,Electrical technical officer,"['Rock', 'Metal']"
+0.2777777777777778,Male,Scientist,['Classic']
+0.2222222222222222,Female,Engineer ,"['Classic', 'Rock', 'Hip-Hop']"
+0.07407407407407407,Male,Student,"['Classic', 'Rock', 'Pop']"
+0.2592592592592593,Male,Engineer ,"['Classic', 'Rock', 'Hip-Hop', 'Pop', 'Folk', 'Jazz']"
+0.2962962962962963,Male,Engineer,"['Classic', 'Rock', 'Hip-Hop', 'Pop']"
+0.2222222222222222,Male,Engineer,"['Classic', 'Pop', 'Electronic Dance Music (EDM)']"
+0.7592592592592593,Male,Teacher,['Classic']
+0.4629629629629629,Male,Sales ,['Classic']
+0.2407407407407407,Female,Student,"['Classic', 'Hip-Hop']"
+0.2592592592592593,Male,Engineer,['Classic']
+0.2407407407407407,Male,Unknown,"['Classic', 'Rock', 'Electronic Dance Music (EDM)']"
+0.2592592592592593,Male,Engineer ,"['Folk', 'Country ']"
+0.20370370370370372,Male,Application Engineer ,"['Classic', 'Electronic Dance Music (EDM)', 'Folk']"
+0.2407407407407407,Male,Engineering ,"['Classic', 'Rock', 'Electronic Dance Music (EDM)', 'Metal']"
+0.2407407407407407,Male,MEP Engineer ,"['Classic', 'Rock', 'Electronic Dance Music (EDM)']"
+0.16666666666666663,Female,Nurse,"['Pop', 'Electronic Dance Music (EDM)']"
+0.12962962962962965,Female,student,"['Classic', 'Rock', 'Electronic Dance Music (EDM)']"
+0.14814814814814814,Female,Nurse,['Classic']
+0.20370370370370372,Female,Nurse,['Classic']
+0.4814814814814814,Female,Public health midwife,['Classic']
+0.2407407407407407,Male,Software Engineer,"['Classic', 'Rock', 'Hip-Hop', 'Pop', 'Electronic Dance Music (EDM)', 'Folk', 'Metal']"
+0.2407407407407407,Female,Fitness coach,"['Classic', 'Rock', 'Hip-Hop']"
+0.18518518518518517,Male,Engineer,['Classic']
+0.2222222222222222,Male,Computer Technician,"['Classic', 'Rock', 'Hip-Hop', 'Pop', 'Electronic Dance Music (EDM)']"
+0.07407407407407407,Male,Undergraduate,['Classic']
+0.05555555555555558,Male,Student ,"['Classic', 'Rock', 'Hip-Hop', 'Pop', 'Electronic Dance Music (EDM)', 'R&B', 'Jazz', 'Trap music and Afro music']"
+0.12962962962962965,Male,Student ,"['Classic', 'Metal']"
+0.2407407407407407,Female,QA Engineer ,"['Classic', 'Folk', 'Jazz']"
+0.2407407407407407,Female,Unknown,['Classic']
+0.07407407407407407,Female,Student ,['Pop']
+0.1111111111111111,Female,Student ,"['Rock', 'Hip-Hop', 'Pop', 'Electronic Dance Music (EDM)']"
+0.2222222222222222,Male,Software Engineer ,"['Rock', 'Hip-Hop', 'Pop']"
+0.18518518518518517,Male,Undergraduate,"['Pop', 'Rock', 'Electronic Dance Music (EDM)', 'Classic']"
+0.18518518518518517,Female,Undergraduate ,['Classic']
+0.18518518518518517,Male,Undergraduate ,['Classic']
+0.18518518518518517,Male,Graduate student,"['Classic', 'Rock', 'Jazz', 'Folk', 'Pop']"
+0.18518518518518517,Male,Undergraduate ,"['Classic', 'Electronic Dance Music (EDM)']"
+0.18518518518518517,Male,Audit Associate ,['Classic']
+0.18518518518518517,Male,Electrical Engineer,"['Pop', 'Classic']"
+0.18518518518518517,Male,Undergraduate ,"['Jazz', 'Rock', 'Hip-Hop']"
+0.2962962962962963,Female,Doctor ,['Classic']
+0.9629629629629628,Female,Retired,"['Classic', 'Folk']"
+0.2407407407407407,Female,Doctor,['Pop']
+0.2407407407407407,Female,Doctor ,"['Classic', 'Pop', 'Orchestral ']"
+0.18518518518518517,Male,Undergraduate  ,['Pop']
+0.18518518518518517,Male,QA Engineer ,"['Electronic Dance Music (EDM)', 'Hip-Hop', 'Rock', 'Pop']"
+0.2407407407407407,Female,Doctor ,"['Classic', 'Hip-Hop']"
+1.0,Male,Retired,"['Classic', 'Folk']"
+0.18518518518518517,Male,Software Engineer,"['Hip-Hop', 'Metal', 'Classic', 'Rock']"
+0.18518518518518517,Male,Undergraduate ,"['Classic', 'Pop']"
+0.18518518518518517,Male,Undergraduate ,"['Metal', 'Rock', 'Classic']"
+0.18518518518518517,Male,Undergraduate ,"['Rock', 'Classic', 'Hip-Hop', 'Pop']"
+0.14814814814814814,Female,Undergraduate ,"['Rock', 'Classic', 'Hip-Hop', 'Pop']"
+0.16666666666666663,Female,Undergraduate,['Pop']
+0.20370370370370372,Male,Electrical Engineer,['Classic']
