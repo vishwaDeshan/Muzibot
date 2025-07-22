@@ -47,7 +47,9 @@ def get_best_match_songs(
     user_feature_matrix = get_user_liked_feature_matrix(user_id, mood, db)
     min_loudness, max_loudness = get_loudness_bounds(db)
 
-    # If user has liked songs, use cosine similarity
+    user = db.query(User).filter(User.id == user_id).first()
+    fav_artists = set(user.user_fav_artists or [])
+
     if user_feature_matrix:
         user_pref_vector = np.mean(user_feature_matrix, axis=0).reshape(1, -1)
 
@@ -55,17 +57,18 @@ def get_best_match_songs(
         for song in songs:
             song_vector = np.array(get_feature_vector(song, min_loudness, max_loudness)).reshape(1, -1)
             similarity = cosine_similarity(user_pref_vector, song_vector)[0][0]
+
+            # Boost score if artist matches
+            if fav_artists and artist_matches(song.get("track_artist", ""), fav_artists):
+                similarity += 0.05  # boost score slightly
+
             scored_songs.append((similarity, song))
 
         scored_songs.sort(key=lambda x: -x[0])
         top_songs = [song for _, song in scored_songs[:5]]
         return top_songs
 
-    # If no liked songs, check user's favorite artists
-    user = db.query(User).filter(User.id == user_id).first()
-    fav_artists = set(user.user_fav_artists or [])
-
-    # Filter songs with matching artists
+    # If no liked songs, rely on favorite artists
     matching_songs = [song for song in songs if artist_matches(song.get("track_artist", ""), fav_artists)]
 
     if matching_songs:
