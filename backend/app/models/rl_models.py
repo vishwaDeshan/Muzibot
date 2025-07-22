@@ -74,6 +74,7 @@ class SongRating(Base):
     tempo = Column(Float, nullable=True)
     loudness = Column(Float, nullable=True)
     prev_rating = Column(Integer, nullable=True)
+    track_artist = Column(String, nullable= True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
