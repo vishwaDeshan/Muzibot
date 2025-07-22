@@ -11,6 +11,7 @@ class User(Base):
     desired_mood = Column(String, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     favourite_music_genres = Column(JSON, default='[]')
+    user_fav_artists = Column(JSON, default='[]')
 
     # One-to-many relationships
     q_table_entries = relationship("RLQTable", back_populates="user", cascade="all, delete-orphan")
