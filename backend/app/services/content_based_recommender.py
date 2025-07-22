@@ -69,9 +69,22 @@ def get_best_match_songs(
     matching_songs = [song for song in songs if artist_matches(song.get("track_artist", ""), fav_artists)]
 
     if matching_songs:
-        # Optionally sort them by distance if available
         matching_songs.sort(key=lambda x: x.get("distance", float("inf")))
-        return matching_songs[:5]
+        
+        # If enough songs, return top 5
+        if len(matching_songs) >= 5:
+            return matching_songs[:5]
+        
+        # Fill the remaining slots with songs not already in matching_songs
+        remaining_needed = 5 - len(matching_songs)
+        matching_ids = {song["track_id"] for song in matching_songs}  # or any unique field
+
+        additional_songs = [
+            song for song in sorted(songs, key=lambda x: x.get("distance", float("inf")))
+            if song["track_id"] not in matching_ids
+        ][:remaining_needed]
+
+        return matching_songs + additional_songs
 
     # If no matching artists, fallback to distance
     sorted_by_distance = sorted(songs, key=lambda x: x.get("distance", float("inf")))
