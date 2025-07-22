@@ -14,7 +14,8 @@ CREATE TABLE users (
     email VARCHAR NOT NULL UNIQUE,
     desired_mood VARCHAR NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    favourite_music_genres JSONB NOT NULL DEFAULT '[]'
+    favourite_music_genres JSONB NOT NULL DEFAULT '[]',
+	user_fav_artists JSONB NOT NULL DEFAULT '[]'
 );
 
 -- Create RLQTable
@@ -107,7 +108,13 @@ CREATE INDEX idx_song_id ON rl_training_logs(song_id);
 
 
 INSERT INTO users (username, email, desired_mood, favourite_music_genres)
-VALUES ('vishwa98', 'vishwa@gmail.com', 'Calm', '["Pop", "Classical"]');
+VALUES 
+(
+    'vishwa98',
+    'vishwa@gmail.com',
+    'Calm',
+    '["Pop", "Classical"]'
+);
 
 SELECT * FROM users
 SELECT * FROM rl_q_table
