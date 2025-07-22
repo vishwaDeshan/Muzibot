@@ -37,6 +37,13 @@ def get_user_liked_feature_matrix(user_id: int, mood: str, db: Session) -> List[
 
     return feature_matrix
 
+def get_user_already_seen_songs(user_id: int,mood:str, db: Session) -> set:
+    all_suggested_songs = db.query(SongRating).filter(
+        SongRating.user_id == user_id,
+        SongRating.mood_at_rating == mood
+    ).all()
+    return {song.song_id for song in all_suggested_songs}
+
 # Recommend top 5 songs based on cosine similarity
 def get_best_match_songs(
     songs: List[Dict[str, Any]], 
@@ -50,10 +57,14 @@ def get_best_match_songs(
     user = db.query(User).filter(User.id == user_id).first()
     fav_artists = set(user.user_fav_artists or [])
 
+    # Initialize already_seen for use in both branches
+    already_seen = get_user_already_seen_songs(user_id, mood, db)
+
     if user_feature_matrix:
         user_pref_vector = np.mean(user_feature_matrix, axis=0).reshape(1, -1)
 
         scored_songs = []
+
         for song in songs:
             song_vector = np.array(get_feature_vector(song, min_loudness, max_loudness)).reshape(1, -1)
             similarity = cosine_similarity(user_pref_vector, song_vector)[0][0]
@@ -62,6 +73,9 @@ def get_best_match_songs(
             if fav_artists and artist_matches(song.get("track_artist", ""), fav_artists):
                 similarity += 0.05  # boost score slightly
 
+            if already_seen and song.get("track_id") in already_seen:
+                similarity -= 0.05  # penalize already seen songs
+
             scored_songs.append((similarity, song))
 
         scored_songs.sort(key=lambda x: -x[0])
@@ -69,27 +83,32 @@ def get_best_match_songs(
         return top_songs
 
     # If no liked songs, rely on favorite artists
-    matching_songs = [song for song in songs if artist_matches(song.get("track_artist", ""), fav_artists)]
+    matching_artists_songs = [song for song in songs 
+                      if artist_matches(song.get("track_artist", ""), fav_artists) ]
 
-    if matching_songs:
-        matching_songs.sort(key=lambda x: x.get("distance", float("inf")))
-        
-        # If enough songs, return top 5
-        if len(matching_songs) >= 5:
-            return matching_songs[:5]
-        
-        # Fill the remaining slots with songs not already in matching_songs
-        remaining_needed = 5 - len(matching_songs)
-        matching_ids = {song["track_id"] for song in matching_songs}  # or any unique field
+    if matching_artists_songs:
+        matching_artists_songs.sort(key=lambda x: x.get("distance", float("inf")))
 
-        additional_songs = [
-            song for song in sorted(songs, key=lambda x: x.get("distance", float("inf")))
-            if song["track_id"] not in matching_ids
-        ][:remaining_needed]
+        if len(matching_artists_songs) >= 5:
+            return matching_artists_songs[:5]
 
-        return matching_songs + additional_songs
+        remaining_needed = 5 - len(matching_artists_songs)
+        matching_ids = {song["track_id"] for song in matching_artists_songs}
 
-    # If no matching artists, fallback to distance
+        if already_seen:
+            additional_songs = [
+                song for song in sorted(songs, key=lambda x: x.get("distance", float("inf")))
+                if song["track_id"] not in matching_ids and song["track_id"] not in already_seen
+            ][:remaining_needed]
+        else:
+            additional_songs = [
+                song for song in sorted(songs, key=lambda x: x.get("distance", float("inf")))
+                if song["track_id"] not in matching_ids
+            ][:remaining_needed]
+
+        return matching_artists_songs + additional_songs
+
+    # If no matching artists, fallback to distance (new users with no spotify link)
     sorted_by_distance = sorted(songs, key=lambda x: x.get("distance", float("inf")))
     return sorted_by_distance[:5]
 
