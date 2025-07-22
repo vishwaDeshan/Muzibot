@@ -79,6 +79,7 @@ CREATE TABLE song_ratings (
     tempo FLOAT,
 	loudness FLOAT,
 	prev_rating INTEGER,
+	track_artist VARCHAR,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id),
