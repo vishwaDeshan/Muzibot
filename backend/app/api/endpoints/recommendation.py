@@ -48,6 +48,7 @@ class SongRatingInput(BaseModel):
     liveness: float
     tempo: float
     loudness: float
+    track_artist: str
     context: Optional[str] = None
 
 @router.post("/rate-song")
@@ -93,6 +94,7 @@ async def rate_song(input_data: SongRatingInput, db: Session = Depends(get_db)):
                 liveness=input_data.liveness,
                 tempo=input_data.tempo,
                 loudness = input_data.loudness,
+                track_artist = input_data.track_artist,
                 context=input_data.context
             )
         except Exception as e:
@@ -202,6 +204,11 @@ async def recommend_songs(input_data: RecommendationInput, db: Session = Depends
         except Exception as e:
             logging.error(f"Error getting best match songs: {str(e)}")
             raise HTTPException(status_code=500, detail="Error selecting top songs")
+        
+        for song in selected_top_songs:
+            if "track_id" in song:
+                track_id = song["track_id"]
+                song["track_id"] = f"spotify:track:{track_id}"
 
         # 8. Return result
         return {

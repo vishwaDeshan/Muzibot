@@ -114,7 +114,7 @@ VALUES
     'vishwa98',
     'vishwa@gmail.com',
     'Calm',
-    '["Pop", "Classical"]'
+    '["Pop", "Classical", "Rock"]'
 );
 
 SELECT * FROM users

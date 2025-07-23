@@ -202,9 +202,9 @@ class RLRecommendationAgent:
 
         if not rated_songs:
             weights = {
-                'similar_users_music_prefs': 0.3,
-                'current_user_mood': 0.3,
-                'desired_mood_after_listening': 0.3
+                'similar_users_music_prefs': 0.333,
+                'current_user_mood': 0.333,
+                'desired_mood_after_listening': 0.333
             }
             self._save_weights(mood, weights)
             return weights
@@ -228,9 +228,9 @@ class RLRecommendationAgent:
 
         if count == 0:
             weights = {
-                'similar_users_music_prefs': 0.3,
-                'current_user_mood': 0.3,
-                'desired_mood_after_listening': 0.3
+                'similar_users_music_prefs': 0.333,
+                'current_user_mood': 0.333,
+                'desired_mood_after_listening': 0.333
             }
         else:
             weights = {key: value / count for key, value in total_weights.items()}
@@ -303,7 +303,7 @@ class RLRecommendationAgent:
 
     def save_rating(self, song_id: str, rating: int, mood: str, arousal: float, valence: float,
                     danceability: float, energy: float, acousticness: float, instrumentalness: float, speechiness: float, 
-                    liveness: float, tempo: float, loudness: float, context: str = None):
+                    liveness: float, tempo: float, loudness: float,track_artist:str, context: str = None):
         
         PREV_RATING = 3 # default previous rating for a song
 
@@ -326,6 +326,7 @@ class RLRecommendationAgent:
             existing_rating.tempo = tempo
             existing_rating.loudness = loudness
             existing_rating.context = context
+            existing_rating.track_artist = track_artist
             existing_rating.updated_at = datetime.utcnow()
         else:
             new_rating = SongRating(
@@ -344,6 +345,7 @@ class RLRecommendationAgent:
                 tempo=tempo,
                 loudness=loudness,
                 context=context,
+                track_artist=track_artist,
                 prev_rating=PREV_RATING
             )
             self.db.add(new_rating)
