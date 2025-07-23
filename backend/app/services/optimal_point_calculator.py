@@ -104,9 +104,9 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
     # Step 4: Use the center of gravity method to calculate the optimal point
     # Use RL weights if provided, otherwise use defaults
     default_weights = {
-        'similar_users_music_prefs': 0.5,
+        'similar_users_music_prefs': 0.2,
         'current_user_mood': 0.3,
-        'desired_mood_after_listening': 0.2
+        'desired_mood_after_listening': 0.5
     }
     weights = rl_weights if rl_weights is not None else default_weights
 
