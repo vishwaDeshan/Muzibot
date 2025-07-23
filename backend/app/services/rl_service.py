@@ -202,9 +202,9 @@ class RLRecommendationAgent:
 
         if not rated_songs:
             weights = {
-                'similar_users_music_prefs': 0.2,
+                'similar_users_music_prefs': 0.3,
                 'current_user_mood': 0.3,
-                'desired_mood_after_listening': 0.5
+                'desired_mood_after_listening': 0.3
             }
             self._save_weights(mood, weights)
             return weights
@@ -228,9 +228,9 @@ class RLRecommendationAgent:
 
         if count == 0:
             weights = {
-                'similar_users_music_prefs': 0.2,
+                'similar_users_music_prefs': 0.3,
                 'current_user_mood': 0.3,
-                'desired_mood_after_listening': 0.5
+                'desired_mood_after_listening': 0.3
             }
         else:
             weights = {key: value / count for key, value in total_weights.items()}
