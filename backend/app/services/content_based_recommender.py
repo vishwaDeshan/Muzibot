@@ -195,7 +195,7 @@ def get_best_match_songs(
                     print(f"Artist match: {artist} with similarity {artist_similarity}%")
 
             if already_seen and (track_id in already_seen or (song_key and song_key in already_seen)):
-                penalty = 0.03
+                penalty = 0.05
                 similarity -= penalty
                 print(f"Penalty applied: Song {track_id or f'{track_artist} - {track_name}'} already seen")
 

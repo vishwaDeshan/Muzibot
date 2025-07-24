@@ -49,6 +49,7 @@ class SongRatingInput(BaseModel):
     tempo: float
     loudness: float
     track_artist: str
+    track_name: str
     context: Optional[str] = None
 
 @router.post("/rate-song")
@@ -95,6 +96,7 @@ async def rate_song(input_data: SongRatingInput, db: Session = Depends(get_db)):
                 tempo=input_data.tempo,
                 loudness = input_data.loudness,
                 track_artist = input_data.track_artist,
+                track_name = input_data.track_name,
                 context=input_data.context
             )
         except Exception as e:

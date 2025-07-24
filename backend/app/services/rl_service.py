@@ -20,10 +20,10 @@ class RLRecommendationAgent:
         self.valence_bins = np.linspace(0, 1, 5)  # Discretize valence (0 to 1)
         
         # Learning parameters
-        self.learning_rate = 0.1         # How much new info overrides old (Q-learning update strength)
+        self.learning_rate = 0.5         # How much new info overrides old (Q-learning update strength)
         self.discount_factor = 0.9       # Importance of future rewards vs. immediate rewards
         self.epsilon = 0.1               # Probability of exploring (vs. exploiting best known action)
-        self.similarity_penalty = 0.05   # Penalty applied for too much similarity in song/user preferences
+        self.similarity_penalty = 0.005   # Penalty applied for too much similarity in song/user preferences
 
 
     def _init_q_table(self):
@@ -303,7 +303,7 @@ class RLRecommendationAgent:
 
     def save_rating(self, song_id: str, rating: int, mood: str, arousal: float, valence: float,
                     danceability: float, energy: float, acousticness: float, instrumentalness: float, speechiness: float, 
-                    liveness: float, tempo: float, loudness: float,track_artist:str, context: str = None):
+                    liveness: float, tempo: float, loudness: float,track_artist:str,track_name:str, context: str = None):
         
         PREV_RATING = 3 # default previous rating for a song
 
@@ -327,6 +327,7 @@ class RLRecommendationAgent:
             existing_rating.loudness = loudness
             existing_rating.context = context
             existing_rating.track_artist = track_artist
+            existing_rating.track_name = track_name
             existing_rating.updated_at = datetime.utcnow()
         else:
             new_rating = SongRating(
@@ -346,6 +347,7 @@ class RLRecommendationAgent:
                 loudness=loudness,
                 context=context,
                 track_artist=track_artist,
+                track_name=track_name,
                 prev_rating=PREV_RATING
             )
             self.db.add(new_rating)
