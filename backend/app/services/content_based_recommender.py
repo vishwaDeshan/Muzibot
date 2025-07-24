@@ -86,6 +86,13 @@ def get_user_already_seen_songs(user_id: int, mood: str, db: Session) -> set:
             seen.add(song.song_id)
         track_artist = getattr(song, 'track_artist', '') or ''
         track_name = getattr(song, 'track_name', '') or ''
+        # Ensure track_artist and track_name are strings
+        if not isinstance(track_artist, str):
+            print(f"Warning: Invalid track_artist type for song {song.song_id}: {track_artist}")
+            track_artist = ""
+        if not isinstance(track_name, str):
+            print(f"Warning: Invalid track_name type for song {song.song_id}: {track_name}")
+            track_name = ""
         if track_artist and track_name:
             seen.add((track_artist.lower(), track_name.lower()))
     if not seen:
@@ -102,21 +109,29 @@ def get_best_match_songs(
         print("Error: Empty songs list provided")
         return []
 
-    # Remove duplicates from input songs based on track_id and (track_artist, track_name)
+    # Remove duplicates and sanitize inputs
     unique_songs = []
-    seen_identifiers = set()  # Tracks track_id
-    seen_song_keys = set()   # Tracks (track_artist, track_name)
+    seen_identifiers = set()
+    seen_song_keys = set()
     for song in songs:
         track_id = song.get("track_id")
         track_artist = song.get("track_artist", "")
         track_name = song.get("track_name", "")
+        
+        # Ensure track_artist and track_name are strings
+        if not isinstance(track_artist, str):
+            print(f"Warning: Invalid track_artist type for song {track_id or 'unknown'}: {track_artist}")
+            track_artist = ""
+        if not isinstance(track_name, str):
+            print(f"Warning: Invalid track_name type for song {track_id or 'unknown'}: {track_name}")
+            track_name = ""
+        
         song_key = (track_artist.lower(), track_name.lower()) if track_artist and track_name else None
 
         if not track_id and not song_key:
             print(f"Warning: Skipping song with missing identifier: {track_name or 'Unknown'} by {track_artist or 'Unknown'}")
             continue
 
-        # Check for duplicates by song_key first (artist and name), then track_id
         if song_key and song_key in seen_song_keys:
             print(f"Warning: Duplicate song found and skipped: {track_name} by {track_artist}")
             continue
@@ -138,13 +153,20 @@ def get_best_match_songs(
     min_tempo, max_tempo = get_tempo_bounds(db)
 
     user = db.query(User).filter(User.id == user_id).first()
-    fav_artists = set(user.user_fav_artists or []) if user else set()
+    # Sanitize fav_artists to ensure it's a list of strings
+    fav_artists = set()
+    if user and user.user_fav_artists:
+        for artist in user.user_fav_artists:
+            if isinstance(artist, str) and artist.strip():
+                fav_artists.add(artist)
+            else:
+                print(f"Warning: Invalid favorite artist entry for user {user_id}: {artist}")
     if not fav_artists:
-        print(f"Warning: No favorite artists for user {user_id}")
+        print(f"Warning: No valid favorite artists for user {user_id}")
 
     already_seen = get_user_already_seen_songs(user_id, mood, db)
-    seen_identifiers = set()  # Reset for result collection
-    seen_song_keys = set()   # Reset for result collection
+    seen_identifiers = set()
+    seen_song_keys = set()
     result_songs = []
 
     if user_feature_matrix:
@@ -159,6 +181,13 @@ def get_best_match_songs(
             track_id = song.get("track_id")
             track_artist = song.get("track_artist", "")
             track_name = song.get("track_name", "")
+            # Ensure track_artist and track_name are strings
+            if not isinstance(track_artist, str):
+                print(f"Warning: Invalid track_artist type for song {track_id or 'unknown'}: {track_artist}")
+                track_artist = ""
+            if not isinstance(track_name, str):
+                print(f"Warning: Invalid track_name type for song {track_id or 'unknown'}: {track_name}")
+                track_name = ""
             song_key = (track_artist.lower(), track_name.lower()) if track_artist and track_name else None
 
             if not track_id and not song_key:
@@ -187,15 +216,14 @@ def get_best_match_songs(
             penalty = 0.0
 
             if fav_artists:
-                artist = song.get("track_artist", "")
-                if artist_matches(artist, fav_artists):
-                    artist_similarity = max(fuzz.ratio(artist.lower(), fav_artist.lower()) for fav_artist in fav_artists)
-                    boost = 0.3 * (artist_similarity / 100.0)
+                if artist_matches(track_artist, fav_artists):
+                    artist_similarity = max(fuzz.ratio(track_artist.lower(), fav_artist.lower()) for fav_artist in fav_artists if isinstance(fav_artist, str))
+                    boost = 0.2 * (artist_similarity / 100.0)
                     similarity += boost
-                    print(f"Artist match: {artist} with similarity {artist_similarity}%")
+                    print(f"Artist match: {track_artist} with similarity {artist_similarity}%")
 
             if already_seen and (track_id in already_seen or (song_key and song_key in already_seen)):
-                penalty = 0.05
+                penalty = 0.3
                 similarity -= penalty
                 print(f"Penalty applied: Song {track_id or f'{track_artist} - {track_name}'} already seen")
 
@@ -215,6 +243,13 @@ def get_best_match_songs(
             track_id = song.get("track_id")
             track_artist = song.get("track_artist", "")
             track_name = song.get("track_name", "")
+            # Ensure track_artist and track_name are strings
+            if not isinstance(track_artist, str):
+                print(f"Warning: Invalid track_artist type for result song {track_id or 'unknown'}: {track_artist}")
+                track_artist = ""
+            if not isinstance(track_name, str):
+                print(f"Warning: Invalid track_name type for result song {track_id or 'unknown'}: {track_name}")
+                track_name = ""
             song_key = (track_artist.lower(), track_name.lower()) if track_artist and track_name else None
             if (song_key and song_key not in seen_song_keys) or (track_id and track_id not in seen_identifiers):
                 result_songs.append(song)
@@ -243,6 +278,13 @@ def get_best_match_songs(
         track_id = song.get("track_id")
         track_artist = song.get("track_artist", "")
         track_name = song.get("track_name", "")
+        # Ensure track_artist and track_name are strings
+        if not isinstance(track_artist, str):
+            print(f"Warning: Invalid track_artist type for artist match song {track_id or 'unknown'}: {track_artist}")
+            track_artist = ""
+        if not isinstance(track_name, str):
+            print(f"Warning: Invalid track_name type for artist match song {track_id or 'unknown'}: {track_name}")
+            track_name = ""
         song_key = (track_artist.lower(), track_name.lower()) if track_artist and track_name else None
         if (song_key and song_key not in seen_song_keys) or (track_id and track_id not in seen_identifiers):
             result_songs.append(song)
@@ -273,6 +315,13 @@ def get_best_match_songs(
         track_id = song.get("track_id")
         track_artist = song.get("track_artist", "")
         track_name = song.get("track_name", "")
+        # Ensure track_artist and track_name are strings
+        if not isinstance(track_artist, str):
+            print(f"Warning: Invalid track_artist type for additional song {track_id or 'unknown'}: {track_artist}")
+            track_artist = ""
+        if not isinstance(track_name, str):
+            print(f"Warning: Invalid track_name type for additional song {track_id or 'unknown'}: {track_name}")
+            track_name = ""
         song_key = (track_artist.lower(), track_name.lower()) if track_artist and track_name else None
         if (song_key and song_key not in seen_song_keys) or (track_id and track_id not in seen_identifiers):
             result_songs.append(song)
@@ -301,11 +350,21 @@ def get_tempo_bounds(db: Session) -> tuple[float, float]:
         print(f"Warning: Identical tempo bounds ({min_tempo})")
     return min_tempo, max_tempo
 
-def artist_matches(song_artist: str, fav_artists: List[str], threshold: int = 60) -> bool:
-    if not song_artist or not fav_artists:
+def artist_matches(song_artist: Any, fav_artists: List[Any], threshold: int = 60) -> bool:
+    # Ensure song_artist is a string
+    if not song_artist or not isinstance(song_artist, str):
+        print(f"Warning: Invalid song_artist type or value: {song_artist}")
         return False
+    
+    # Ensure fav_artists is a list or set of strings
+    if not fav_artists or not isinstance(fav_artists, (list, set)):
+        print(f"Warning: Invalid fav_artists type or value: {fav_artists}")
+        return False
+    
     for fav_artist in fav_artists:
-        if not fav_artist:
+        # Ensure fav_artist is a string
+        if not fav_artist or not isinstance(fav_artist, str):
+            print(f"Warning: Invalid fav_artist type or value: {fav_artist}")
             continue
         similarity = fuzz.ratio(song_artist.lower(), fav_artist.lower())
         if similarity >= threshold:
