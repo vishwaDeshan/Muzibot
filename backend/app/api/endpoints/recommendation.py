@@ -250,11 +250,3 @@ async def test_rl_accuracy_all(db: Session = Depends(get_db)):
     except Exception as e:
         logging.error(f"Unexpected error in test_rl_accuracy_all: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error during RL accuracy test for all users")
-    
-@router.post("/evaluate/learning-curve")
-async def evaluate_learning_curve(db: Session = Depends(get_db)):
-    try:
-        RLEvaluation.plot_learning_curve(db)
-        return {"message": "Learning curve plotted and saved as 'learning_curve.png'"}
-    except Exception as e:
-        return {"error": str(e)}
