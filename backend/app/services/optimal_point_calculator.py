@@ -48,7 +48,6 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
         'motivated': {'valence': (0.7, 0.9), 'arousal': (0.7, 0.9)},
         'focused': {'valence': (0.5, 0.7), 'arousal': (0.2, 0.4)},
         'excited': {'valence': (0.8, 1.0), 'arousal': (0.8, 1.0)},
-        'romantic': {'valence': (0.6, 0.9), 'arousal': (0.2, 0.4)},
         'inspired': {'valence': (0.7, 0.9), 'arousal': (0.5, 0.7)},
         'confident': {'valence': (0.7, 0.9), 'arousal': (0.5, 0.7)},
         'less sad': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.2)},
