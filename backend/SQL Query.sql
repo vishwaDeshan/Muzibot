@@ -108,13 +108,14 @@ CREATE INDEX idx_user_id ON rl_training_logs(user_id);
 CREATE INDEX idx_song_id ON rl_training_logs(song_id);
 
 
-INSERT INTO users (username, email, desired_mood, favourite_music_genres)
+INSERT INTO users (username, email, desired_mood, favourite_music_genres, user_fav_artists)
 VALUES 
 (
-    'deshan98',
-    'deshanvish@gmail.com',
+    'chandulaKvishka',
+    'chandula1999@gmail.com',
     'energized',
-    '["Hip-Hop", "Classic", "Rock"]'
+    '["Hip-Hop", "Classic", "Pop"]',
+	'["Shawn Mendes","Justin Bieber", "One Direction", "Bruno Mars"]'
 );
 
 SELECT * FROM users
