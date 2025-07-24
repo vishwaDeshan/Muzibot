@@ -190,7 +190,7 @@ def get_best_match_songs(
                 artist = song.get("track_artist", "")
                 if artist_matches(artist, fav_artists):
                     artist_similarity = max(fuzz.ratio(artist.lower(), fav_artist.lower()) for fav_artist in fav_artists)
-                    boost = 0.03 * (artist_similarity / 100.0)
+                    boost = 0.3 * (artist_similarity / 100.0)
                     similarity += boost
                     print(f"Artist match: {artist} with similarity {artist_similarity}%")
 
