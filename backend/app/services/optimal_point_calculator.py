@@ -1,4 +1,5 @@
 import numpy as np # type: ignore
+from collections import Counter
 import random
 
 # Note: use this, if need to move optimal point slightly for same info but in various attempts
@@ -60,14 +61,21 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
     # Component 1: Similar users' music preferences based on the current user mood
     similar_users_prefs_valence_values = []
     similar_users_prefs_arousal_values = []
+
+    pref_counter = Counter(similar_users_music_prefs)
     
-    for pref in similar_users_music_prefs:
+    print("\nWeighted preference contribution:")
+    for pref, count in pref_counter.items():
         if pref in music_prefs_to_valence_arousal:
             val_range = music_prefs_to_valence_arousal[pref]['valence']
             aro_range = music_prefs_to_valence_arousal[pref]['arousal']
             valence, arousal = valence_arousal_from_range(val_range, aro_range)
-            similar_users_prefs_valence_values.append(valence)
-            similar_users_prefs_arousal_values.append(arousal)
+            
+            # Apply preference weight based on frequency
+            similar_users_prefs_valence_values.extend([valence] * count)
+            similar_users_prefs_arousal_values.extend([arousal] * count)
+
+            print(f"{pref}: count={count}, valence={valence:.2f}, arousal={arousal:.2f} (contributes {count} times)")
         else:
             print(f"Warning: '{pref}' not found in music preferences mapping, skipping.")
 
