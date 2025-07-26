@@ -5,24 +5,13 @@ from app.models.rl_models import SongRating
 from sklearn.metrics.pairwise import cosine_similarity  # type: ignore
 from app.models.user import User
 from fuzzywuzzy import fuzz  # type: ignore
+from app.constants.feature_weights import FEATURE_WEIGHTS
 import numpy as np  # type: ignore
 
 FEATURE_KEYS = [
     'danceability', 'energy', 'valence', 'acousticness',
     'instrumentalness', 'speechiness', 'liveness', 'tempo', 'loudness'
 ]
-
-FEATURE_WEIGHTS = {
-    'valence': 2.0,  # Critical for mood
-    'energy': 1.5,   # Important for mood
-    'danceability': 1.2,
-    'acousticness': 1.0,
-    'instrumentalness': 0.8,
-    'speechiness': 0.8,
-    'liveness': 0.8,
-    'tempo': 1.0,
-    'loudness': 1.0
-}
 
 def get_feature_vector(song: Dict[str, Any], min_loudness: float, max_loudness: float, min_tempo: float, max_tempo: float) -> List[float]:
     vector = []

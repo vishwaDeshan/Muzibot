@@ -4,6 +4,8 @@ from sqlalchemy import func # type: ignore
 from app.models.rl_models import RLQTable, RLWeights, SongRating
 from sqlalchemy.exc import SQLAlchemyError # type: ignore
 from app.models.rl_models import RLTrainingLog
+from app.constants.default_weights import default_weights
+from app.constants.rl_agent_config import  LEARNING_RATE, DISCOUNT_FACTOR, EPSILON, SIMILARITY_PENALTY
 from sqlalchemy.orm import Session
 from datetime import datetime
 import logging
@@ -20,11 +22,10 @@ class RLRecommendationAgent:
         self.valence_bins = np.linspace(0, 1, 5)  # Discretize valence (0 to 1)
         
         # Learning parameters
-        self.learning_rate = 0.5         # How much new info overrides old (Q-learning update strength)
-        self.discount_factor = 0.9       # Importance of future rewards vs. immediate rewards
-        self.epsilon = 0.1               # Probability of exploring (vs. exploiting best known action)
-        self.similarity_penalty = 0.005   # Penalty applied for too much similarity in song/user preferences
-
+        self.learning_rate = LEARNING_RATE         # How much new info overrides old (Q-learning update strength)
+        self.discount_factor =   DISCOUNT_FACTOR     # Importance of future rewards vs. immediate rewards
+        self.epsilon = EPSILON              # Probability of exploring (vs. exploiting best known action)
+        self.similarity_penalty = SIMILARITY_PENALTY   # Penalty applied for too much similarity in song/user preferences
 
     def _init_q_table(self):
         return np.zeros((len(self.moods), len(self.ratings), len(self.arousal_bins), len(self.valence_bins),
@@ -201,11 +202,7 @@ class RLRecommendationAgent:
             }
 
         if not rated_songs:
-            weights = {
-                'similar_users_music_prefs': 0.333,
-                'current_user_mood': 0.333,
-                'desired_mood_after_listening': 0.333
-            }
+            weights= default_weights
             self._save_weights(mood, weights)
             return weights
 
@@ -227,11 +224,7 @@ class RLRecommendationAgent:
                 continue
 
         if count == 0:
-            weights = {
-                'similar_users_music_prefs': 0.333,
-                'current_user_mood': 0.333,
-                'desired_mood_after_listening': 0.333
-            }
+            weights = default_weights
         else:
             weights = {key: value / count for key, value in total_weights.items()}
         
