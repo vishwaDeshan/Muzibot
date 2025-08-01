@@ -34,3 +34,4 @@ yarn-error.log
 
 # Ignore worked vesrion ofdependecies
 backend/updatedRequirements.txt
+frontend

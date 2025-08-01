@@ -1,11 +1,11 @@
 ALTER DATABASE "MuziBot" REFRESH COLLATION VERSION;
 
 -- Drop tables if they exist (optional, for clean creation)
-DROP TABLE IF EXISTS song_ratings CASCADE;
-DROP TABLE IF EXISTS rl_weights CASCADE;
-DROP TABLE IF EXISTS rl_q_table CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS rl_training_logs CASCADE;
+-- DROP TABLE IF EXISTS song_ratings CASCADE;
+-- DROP TABLE IF EXISTS rl_weights CASCADE;
+-- DROP TABLE IF EXISTS rl_q_table CASCADE;
+-- DROP TABLE IF EXISTS users CASCADE;
+-- DROP TABLE IF EXISTS rl_training_logs CASCADE;
 
 -- Create the users table
 CREATE TABLE users (
@@ -108,13 +108,14 @@ CREATE INDEX idx_user_id ON rl_training_logs(user_id);
 CREATE INDEX idx_song_id ON rl_training_logs(song_id);
 
 
-INSERT INTO users (username, email, desired_mood, favourite_music_genres)
+INSERT INTO users (username, email, desired_mood, favourite_music_genres, user_fav_artists)
 VALUES 
 (
-    'vishwa98',
-    'vishwa@gmail.com',
-    'Calm',
-    '["Pop", "Classical"]'
+    'ruwiniSan99',
+    'ruwiniSan99@gmail.com',
+    'energized',
+    '["Hip-Hop", "Classic", "Pop"]',
+	'["Shawn Mendes","Justin Bieber", "One Direction", "Bruno Mars"]'
 );
 
 SELECT * FROM users

@@ -105,61 +105,6 @@ class RLEvaluation:
 
         logging.info(f"Chart saved to {output_path}")
         return output_path
-    
-    def plot_learning_curve(db: Session):
-        # Create output directory
-        output_dir = "./charts"
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Get logs
-        logs = db.query(RLTrainingLog).order_by(RLTrainingLog.episode).all()
-        if not logs:
-            print("No logs found")
-            return
-
-        print(f"Total logs: {len(logs)}")
-
-        # Convert logs to DataFrame
-        df = pd.DataFrame([{
-            'user_id': log.user_id,
-            'episode': log.episode,
-            'reward': log.reward,
-            'actual': log.actual_rating
-        } for log in logs])
-
-        # Fill NaNs
-        df['reward'] = df['reward'].fillna(0)
-        df['actual'] = df['actual'].fillna(-1)
-
-        # Accuracy calculation
-        total = len(df[df['actual'] != -1])
-        correct = len(df[(df['reward'] == 1) & (df['actual'] != -1)])
-        accuracy = correct / total if total > 0 else 0
-
-        print(f"Total evaluated episodes (with actual): {total}")
-        print(f"Correct predictions (reward=1): {correct}")
-        print(f"Accuracy: {accuracy * 100:.2f}%")
-
-        # Rolling reward average
-        window = min(10, len(df))
-        df['avg_reward'] = df['reward'].rolling(window=window).mean()
-
-        # Plot
-        plt.figure(figsize=(10, 6))
-        plt.plot(df['episode'], df['avg_reward'], label='Rolling Avg Reward', color='tab:blue')
-        plt.xlabel('Episode')
-        plt.ylabel('Avg Reward')
-        plt.title(f'RL Learning Curve - Accuracy: {accuracy:.2f}')
-        plt.grid(True)
-        plt.legend()
-
-        # Save plot
-        path = os.path.join(output_dir, "learning_curve_reward.png")
-        plt.tight_layout()
-        plt.savefig(path)
-        plt.close()
-
-        print(f"Plot saved to: {path}")
 
     def evaluate_all_users(db: Session = None) -> Dict:
         # Define output directory

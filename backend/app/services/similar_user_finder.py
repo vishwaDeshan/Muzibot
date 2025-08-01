@@ -139,6 +139,7 @@ def find_similar_users(input_age, input_sex, input_profession, input_fav_music_g
     # Step 7: Extract the target preferences
     mood_preferences = similar_users_with_moods[user_current_mood].tolist()
     flattened_mood_preferences = [pref for user_prefs in mood_preferences for pref in user_prefs]
+    print("Flattened mood preferences:", flattened_mood_preferences)
 
     return flattened_mood_preferences
 
