@@ -1,12 +1,10 @@
-import numpy as np # type: ignore
-from sqlalchemy.orm import Session # type: ignore
-from sqlalchemy import func # type: ignore
-from app.models.rl_models import RLQTable, RLWeights, SongRating
-from sqlalchemy.exc import SQLAlchemyError # type: ignore
-from app.models.rl_models import RLTrainingLog
+import numpy as np  # type: ignore
+from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy import func  # type: ignore
+from app.models.rl_models import RLQTable, RLWeights, SongRating, RLTrainingLog
+from sqlalchemy.exc import SQLAlchemyError  # type: ignore
 from app.constants.default_weights import default_weights
-from app.constants.rl_agent_config import  LEARNING_RATE, DISCOUNT_FACTOR, EPSILON, SIMILARITY_PENALTY
-from sqlalchemy.orm import Session
+from app.constants.rl_agent_config import LEARNING_RATE, DISCOUNT_FACTOR, EPSILON, SIMILARITY_PENALTY
 from datetime import datetime
 import logging
 
@@ -19,13 +17,13 @@ class RLRecommendationAgent:
         self.weight_values = np.linspace(0.1, 0.5, 5)  # [0.1, 0.2, 0.3, 0.4, 0.5]
         self.num_weights = len(self.weight_values)
         self.arousal_bins = np.linspace(-1, 1, 5)  # Discretize arousal (-1 to 1)
-        self.valence_bins = np.linspace(0, 1, 5)  # Discretize valence (0 to 1)
+        self.valence_bins = np.linspace(-1, 1, 5)  # Discretize valence (-1 to 1)
         
         # Learning parameters
-        self.learning_rate = LEARNING_RATE         # How much new info overrides old (Q-learning update strength)
-        self.discount_factor =   DISCOUNT_FACTOR     # Importance of future rewards vs. immediate rewards
-        self.epsilon = EPSILON              # Probability of exploring (vs. exploiting best known action)
-        self.similarity_penalty = SIMILARITY_PENALTY   # Penalty applied for too much similarity in song/user preferences
+        self.learning_rate = LEARNING_RATE  # How much new info overrides old (Q-learning update strength)
+        self.discount_factor = DISCOUNT_FACTOR  # Importance of future rewards vs. immediate rewards
+        self.epsilon = EPSILON  # Probability of exploring (vs. exploiting best known action)
+        self.similarity_penalty = SIMILARITY_PENALTY  # Penalty for recommending similar songs
 
     def _init_q_table(self):
         return np.zeros((len(self.moods), len(self.ratings), len(self.arousal_bins), len(self.valence_bins),
@@ -33,20 +31,25 @@ class RLRecommendationAgent:
 
     def _load_q_table_for_song(self, song_id: str):
         q_table = self._init_q_table()
-        song = self.db.query(SongRating).filter(SongRating.song_id == song_id,
-                                                SongRating.user_id == self.user_id
+        song = self.db.query(SongRating).filter(
+            SongRating.song_id == song_id,
+            SongRating.user_id == self.user_id
         ).first()
         if not song or song.arousal is None or song.valence is None:
-            arousal_idx = 0
-            valence_idx = 0
+            arousal_idx = 2  # Middle bin for arousal (-1 to 1)
+            valence_idx = 2  # Middle bin for valence (-1 to 1)
+            exact_arousal = 0.0
+            exact_valence = 0.0
         else:
             # Ensure proper binning for arousal and valence
             arousal = max(min(song.arousal, 1), -1)  # Clamp arousal to [-1, 1]
-            valence = max(min(song.valence, 1), 0)   # Clamp valence to [0, 1]
+            valence = max(min(song.valence, 1), -1)  # Clamp valence to [-1, 1]
             arousal_idx = np.digitize(arousal, self.arousal_bins, right=True) - 1
             valence_idx = np.digitize(valence, self.valence_bins, right=True) - 1
             arousal_idx = max(0, min(arousal_idx, len(self.arousal_bins) - 2))
             valence_idx = max(0, min(valence_idx, len(self.valence_bins) - 2))
+            exact_arousal = arousal
+            exact_valence = valence
 
         entries = self.db.query(RLQTable).filter(
             RLQTable.user_id == self.user_id,
@@ -57,13 +60,14 @@ class RLRecommendationAgent:
             mood_idx = self.moods.index(entry.mood) if entry.mood in self.moods else 0
             rating_idx = self.ratings.index(entry.prev_rating) if entry.prev_rating in self.ratings else 0
             q_table[mood_idx, rating_idx, arousal_idx, valence_idx,
-                    entry.weight_similar_users_music_prefs_idx, 
-                    entry.weight_current_user_mood_idx, 
+                    entry.weight_similar_users_music_prefs_idx,
+                    entry.weight_current_user_mood_idx,
                     entry.weight_desired_mood_after_listening_idx] = entry.q_value
         
-        return q_table, arousal_idx, valence_idx, song.arousal if song else 0.5, song.valence if song else 0.5
+        return q_table, arousal_idx, valence_idx, exact_arousal, exact_valence
 
-    def _save_q_table_for_song(self, song_id: str, q_table: np.ndarray, arousal_idx: int, valence_idx: int, exact_arousal: float, exact_valence: float):
+    def _save_q_table_for_song(self, song_id: str, q_table: np.ndarray, arousal_idx: int, valence_idx: int, 
+                              exact_arousal: float, exact_valence: float):
         try:
             for mood_idx, mood in enumerate(self.moods):
                 for rating_idx, rating in enumerate(self.ratings):
@@ -72,7 +76,7 @@ class RLRecommendationAgent:
                             for w_desired_idx in range(self.num_weights):
                                 q_value = q_table[mood_idx, rating_idx, arousal_idx, valence_idx,
                                                 w_similar_idx, w_current_idx, w_desired_idx]
-                                if abs(q_value) < 1e-6:
+                                if abs(q_value) < 1e-6:  # Skip near-zero values to save space
                                     continue
 
                                 entry = self.db.query(RLQTable).filter(
@@ -112,8 +116,8 @@ class RLRecommendationAgent:
     def _get_state_index(self, mood: str, prev_rating: int, arousal: float, valence: float):
         mood_idx = self.moods.index(mood) if mood in self.moods else 0
         rating_idx = self.ratings.index(prev_rating) if prev_rating in self.ratings else 0
-        arousal = max(min(arousal, 1), -1)
-        valence = max(min(valence, 1), 0)
+        arousal = max(min(arousal, 1), -1)  # Clamp arousal to [-1, 1]
+        valence = max(min(valence, 1), -1)  # Clamp valence to [-1, 1]
         arousal_idx = np.digitize(arousal, self.arousal_bins, right=True) - 1
         valence_idx = np.digitize(valence, self.valence_bins, right=True) - 1
         arousal_idx = max(0, min(arousal_idx, len(self.arousal_bins) - 2))
@@ -134,7 +138,8 @@ class RLRecommendationAgent:
         penalty = 0.0
         for song in similar_songs:
             if song.song_id != song_id and song.arousal is not None and song.valence is not None:
-                distance = np.sqrt((current_song.arousal - song.arousal)**2 + (current_song.valence - song.valence)**2)
+                distance = np.sqrt((current_song.arousal - song.arousal)**2 + 
+                                 (current_song.valence - song.valence)**2)
                 if distance < 0.3:
                     rating_diff = abs(rating - song.rating)
                     penalty += self.similarity_penalty * rating_diff / (distance + 1e-3)
@@ -142,14 +147,14 @@ class RLRecommendationAgent:
         return base_reward - penalty
 
     def _choose_action(self, q_table: np.ndarray, mood_idx: int, rating_idx: int, arousal_idx: int, valence_idx: int):
-        self.epsilon = max(0.01, self.epsilon * 0.995)
+        self.epsilon = max(0.01, self.epsilon * 0.995)  # Decay epsilon for exploration
         if np.random.random() < self.epsilon:
             w_similar_idx = np.random.randint(self.num_weights)
             w_current_idx = np.random.randint(self.num_weights)
             w_desired_idx = np.random.randint(self.num_weights)
         else:
             slice = q_table[mood_idx, rating_idx, arousal_idx, valence_idx, :, :, :]
-            if np.max(slice) == 0:
+            if np.max(slice) == 0:  # No learned values, choose non-zero weights
                 w_similar_idx = np.random.randint(1, self.num_weights)
                 w_current_idx = np.random.randint(1, self.num_weights)
                 w_desired_idx = np.random.randint(1, self.num_weights)
@@ -159,7 +164,8 @@ class RLRecommendationAgent:
 
     def _update_q_table(self, q_table: np.ndarray, mood_idx: int, rating_idx: int, arousal_idx: int, valence_idx: int,
                         w_similar_idx: int, w_current_idx: int, w_desired_idx: int,
-                        reward: float, next_mood_idx: int, next_rating_idx: int, next_arousal_idx: int, next_valence_idx: int):
+                        reward: float, next_mood_idx: int, next_rating_idx: int, next_arousal_idx: int, 
+                        next_valence_idx: int):
         current_q = q_table[mood_idx, rating_idx, arousal_idx, valence_idx, w_similar_idx, w_current_idx, w_desired_idx]
         next_max_q = np.max(q_table[next_mood_idx, next_rating_idx, next_arousal_idx, next_valence_idx, :, :, :])
         new_q = current_q + self.learning_rate * (reward + self.discount_factor * next_max_q - current_q)
@@ -170,7 +176,7 @@ class RLRecommendationAgent:
         mood_idx = self.moods.index(mood) if mood in self.moods else 0
         rating_idx = self.ratings.index(prev_rating) if prev_rating in self.ratings else 0
         slice = q_table[mood_idx, rating_idx, arousal_idx, valence_idx, :, :, :]
-        if np.max(slice) == 0:
+        if np.max(slice) == 0:  # No learned values, return default weights
             return {
                 'similar_users_music_prefs': self.weight_values[2],
                 'current_user_mood': self.weight_values[2],
@@ -263,27 +269,37 @@ class RLRecommendationAgent:
             raise
 
     def train(self, song_id: str, mood: str, prev_rating: int, new_rating: int, next_mood: str):
-        song = self.db.query(SongRating).filter(SongRating.song_id == song_id,
-                                                SongRating.user_id == self.user_id
+        song = self.db.query(SongRating).filter(
+            SongRating.song_id == song_id,
+            SongRating.user_id == self.user_id
         ).first()
+        if not song or song.arousal is None or song.valence is None:
+            logging.warning(f"No valid song data for song_id {song_id}")
+            return
+
         arousal = song.arousal
         valence = song.valence
         q_table, arousal_idx, valence_idx, exact_arousal, exact_valence = self._load_q_table_for_song(song_id)
         mood_idx, rating_idx, arousal_idx, valence_idx = self._get_state_index(mood, prev_rating, arousal, valence)
-        next_mood_idx, next_rating_idx, next_arousal_idx, next_valence_idx = self._get_state_index(next_mood, new_rating, arousal, valence)
+        next_mood_idx, next_rating_idx, next_arousal_idx, next_valence_idx = self._get_state_index(
+            next_mood, new_rating, arousal, valence
+        )
         
         reward = self._get_reward(new_rating, song_id, mood)
-        w_similar_idx, w_current_idx, w_desired_idx = self._choose_action(q_table, mood_idx, rating_idx, arousal_idx, valence_idx)
-        self._update_q_table(q_table, mood_idx, rating_idx, arousal_idx, valence_idx, w_similar_idx, w_current_idx, w_desired_idx,
-                             reward, next_mood_idx, next_rating_idx, next_arousal_idx, next_valence_idx)
+        w_similar_idx, w_current_idx, w_desired_idx = self._choose_action(
+            q_table, mood_idx, rating_idx, arousal_idx, valence_idx
+        )
+        self._update_q_table(
+            q_table, mood_idx, rating_idx, arousal_idx, valence_idx,
+            w_similar_idx, w_current_idx, w_desired_idx,
+            reward, next_mood_idx, next_rating_idx, next_arousal_idx, next_valence_idx
+        )
         self._save_q_table_for_song(song_id, q_table, arousal_idx, valence_idx, exact_arousal, exact_valence)
 
-        # Log training progress (optional: add episode counter externally or internally)
-        
-        # Get episode number from DB
-        last_episode = self.db.query(func.max(RLTrainingLog.episode))\
-                            .filter(RLTrainingLog.user_id == self.user_id)\
-                            .scalar()
+        # Log training progress
+        last_episode = self.db.query(func.max(RLTrainingLog.episode)).filter(
+            RLTrainingLog.user_id == self.user_id
+        ).scalar()
         episode = (last_episode or 0) + 1
 
         self.log_training_progress(
@@ -295,10 +311,18 @@ class RLRecommendationAgent:
         )
 
     def save_rating(self, song_id: str, rating: int, mood: str, arousal: float, valence: float,
-                    danceability: float, energy: float, acousticness: float, instrumentalness: float, speechiness: float, 
-                    liveness: float, tempo: float, loudness: float,track_artist:str,track_name:str, context: str = None):
-        
-        PREV_RATING = 3 # default previous rating for a song
+                    danceability: float, energy: float, acousticness: float, instrumentalness: float, 
+                    speechiness: float, liveness: float, tempo: float, loudness: float,
+                    track_artist: str, track_name: str, context: str = None):
+        PREV_RATING = 3  # Default previous rating for a new song
+
+        # Validate inputs
+        if not (1 <= rating <= 5):
+            raise ValueError(f"Rating must be between 1 and 5, got {rating}")
+        if not (-1 <= arousal <= 1):
+            raise ValueError(f"Arousal must be between -1 and 1, got {arousal}")
+        if not (-1 <= valence <= 1):
+            raise ValueError(f"Valence must be between -1 and 1, got {valence}")
 
         existing_rating = self.db.query(SongRating).filter(
             SongRating.user_id == self.user_id,
@@ -351,8 +375,7 @@ class RLRecommendationAgent:
             logging.exception(f"Failed to save rating for song {song_id}: {str(e)}")
             raise
 
-    # validate RL model over time
-    def log_training_progress(self, song_id, mood, reward, actual_rating, episode):
+    def log_training_progress(self, song_id: str, mood: str, reward: float, actual_rating: int, episode: int):
         log_entry = RLTrainingLog(
             user_id=self.user_id,
             song_id=song_id,
@@ -366,5 +389,4 @@ class RLRecommendationAgent:
             self.db.commit()
         except SQLAlchemyError as e:
             self.db.rollback()
-            logging.error(f"Failed to save RL training log: {str(e)}")
-
+            logging.error(f"Failed to save RL training log for song {song_id}: {str(e)}")

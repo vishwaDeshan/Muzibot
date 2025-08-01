@@ -111,8 +111,8 @@ CREATE INDEX idx_song_id ON rl_training_logs(song_id);
 INSERT INTO users (username, email, desired_mood, favourite_music_genres, user_fav_artists)
 VALUES 
 (
-    'chandulaKvishka',
-    'chandula1999@gmail.com',
+    'ruwiniSan99',
+    'ruwiniSan99@gmail.com',
     'energized',
     '["Hip-Hop", "Classic", "Pop"]',
 	'["Shawn Mendes","Justin Bieber", "One Direction", "Bruno Mars"]'
