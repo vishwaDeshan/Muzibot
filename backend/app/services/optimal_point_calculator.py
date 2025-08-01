@@ -1,4 +1,7 @@
 import numpy as np # type: ignore
+from collections import Counter
+from app.constants.emotion_mappings import (music_prefs_to_valence_arousal, user_current_mood_to_valence_arousal, desired_mood_to_valence_arousal)
+from app.constants.default_weights import default_weights
 import random
 
 # Note: use this, if need to move optimal point slightly for same info but in various attempts
@@ -23,51 +26,25 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
         'Angry' if current_mood == 'Angry' else
         'Relaxed'
     )
-
-    # Step 2: Map music preferences and moods to valence and arousal values
-    music_prefs_to_valence_arousal = {
-        'Joyful music': {'valence': (0.6, 0.9), 'arousal': (0.4, 0.7)},
-        'Relaxing music': {'valence': (0.4, 0.6), 'arousal': (-0.7, -0.5)},
-        'Sad music': {'valence': (-0.9, -0.7), 'arousal': (-0.4, -0.1)},
-        'Aggressive music': {'valence': (-0.9, -0.6), 'arousal': (0.6, 0.9)}
-    }
-
-    user_current_mood_to_valence_arousal = {
-        'Happy': {'valence': (0.7, 1.0), 'arousal': (0.3, 0.6)},
-        'Sad': {'valence': (-1.0, -0.7), 'arousal': (-0.6, -0.3)},
-        'Angry': {'valence': (-0.8, -0.5), 'arousal': (0.7, 1.0)},
-        'Relaxed': {'valence': (0.5, 0.7), 'arousal': (-0.8, -0.6)}
-    }
-
-    desired_mood_to_valence_arousal = {
-        'calm': {'valence': (0.5, 0.7), 'arousal': (0.0, 0.2)},
-        'happy': {'valence': (0.8, 1.0), 'arousal': (0.5, 0.7)},
-        'energized': {'valence': (0.6, 0.9), 'arousal': (0.7, 0.9)},
-        'relaxed': {'valence': (0.6, 0.8), 'arousal': (-0.5, -0.2)},
-        'motivated': {'valence': (0.7, 0.9), 'arousal': (0.7, 0.9)},
-        'focused': {'valence': (0.5, 0.7), 'arousal': (0.2, 0.4)},
-        'excited': {'valence': (0.8, 1.0), 'arousal': (0.8, 1.0)},
-        'romantic': {'valence': (0.6, 0.9), 'arousal': (0.2, 0.4)},
-        'inspired': {'valence': (0.7, 0.9), 'arousal': (0.5, 0.7)},
-        'confident': {'valence': (0.7, 0.9), 'arousal': (0.5, 0.7)},
-        'less sad': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.2)},
-        'less angry': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.3)},
-        'less anxious': {'valence': (0.3, 0.5), 'arousal': (0.0, 0.3)},
-        'sleepy': {'valence': (-0.3, 0.0), 'arousal': (-0.9, -0.7)}
-    }
-
     # Step 3: Calculate valence and arousal for each component
     # Component 1: Similar users' music preferences based on the current user mood
     similar_users_prefs_valence_values = []
     similar_users_prefs_arousal_values = []
+
+    pref_counter = Counter(similar_users_music_prefs)
     
-    for pref in similar_users_music_prefs:
+    print("\nWeighted preference contribution:")
+    for pref, count in pref_counter.items():
         if pref in music_prefs_to_valence_arousal:
             val_range = music_prefs_to_valence_arousal[pref]['valence']
             aro_range = music_prefs_to_valence_arousal[pref]['arousal']
             valence, arousal = valence_arousal_from_range(val_range, aro_range)
-            similar_users_prefs_valence_values.append(valence)
-            similar_users_prefs_arousal_values.append(arousal)
+            
+            # Apply preference weight based on frequency
+            similar_users_prefs_valence_values.extend([valence] * count)
+            similar_users_prefs_arousal_values.extend([arousal] * count)
+
+            print(f"{pref}: count={count}, valence={valence:.2f}, arousal={arousal:.2f} (contributes {count} times)")
         else:
             print(f"Warning: '{pref}' not found in music preferences mapping, skipping.")
 
@@ -103,11 +80,6 @@ def calculate_optimal_point(similar_users_music_prefs, current_mood, desired_moo
 
     # Step 4: Use the center of gravity method to calculate the optimal point
     # Use RL weights if provided, otherwise use defaults
-    default_weights = {
-        'similar_users_music_prefs': 0.5,
-        'current_user_mood': 0.3,
-        'desired_mood_after_listening': 0.2
-    }
     weights = rl_weights if rl_weights is not None else default_weights
 
     # Ensure weights sum to 1
