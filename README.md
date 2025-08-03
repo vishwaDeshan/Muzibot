@@ -1,4 +1,7 @@
-# Muzibot
+# Muzibot - Final Year Research Project
+
+## System Architecture - Module 03
+![final](https://github.com/user-attachments/assets/d045898b-8e10-4681-9c05-1205a638fef3)
 
 ## 1. Backend Setup (FastAPI)
 ```bash
